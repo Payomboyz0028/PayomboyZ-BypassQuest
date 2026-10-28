@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="KeyBypass — Bypass Any Ad-Link Instantly. รองรับ Delta, Luarmor, LootLabs, Linkvertise และ 100+ ค่าย">
+  <title>KeyBypass — Bypass Any Ad-Link</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Background -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Nav -->
+  <nav class="navbar">
+    <div class="nav-logo">🔓 <span>Key</span>Bypass</div>
+    <div class="nav-links">
+      <a href="/" class="active">Home</a>
+      <a href="/api/docs">API</a>
+      <a href="#stats">Stats</a>
+      <a href="https://discord.gg/" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">⚡ Self-hosted • No external API • Auto-chain</div>
+    <h1>Bypass <span class="gradient-text">Any Ad-Link</span> Instantly</h1>
+    <p class="hero-sub">รองรับ Delta · Luarmor · LootLabs · Linkvertise และอื่น ๆ อีก <strong>100+ ค่าย</strong></p>
+
+    <!-- Engine Selector + Bulk Toggle -->
+    <div class="toolbar">
+      <div class="engine-selector">
+        <label for="engineSelect">🔧 Engine</label>
+        <select id="engineSelect">
+          <option value="auto">🤖 Auto (แนะนำ)</option>
+          <option value="platoboost">🪐 Platoboost / Delta</option>
+          <option value="luarmor">🛡️ Luarmor</option>
+          <option value="linkvertise">⚡ Linkvertise</option>
+          <option value="lootlabs">💎 LootLabs</option>
+          <option value="workink">💼 Work.ink</option>
+          <option value="rekonise">🔓 Rekonise</option>
+          <option value="bloxscript">🟦 Blox Script</option>
+          <option value="rscript">🔴 RScript</option>
+          <option value="adlinkfly">⚡ AdLinkFly Network</option>
+          <option value="adfly">🪰 AdFly</option>
+          <option value="general">🔗 Fallback</option>
+        </select>
+      </div>
+      <label class="bulk-toggle" id="bulkToggleLabel">
+        <input type="checkbox" id="bulkToggle" onchange="toggleBulkMode()">
+        <span>📄 Bulk Mode</span>
+      </label>
+    </div>
+
+    <!-- Input: Single URL -->
+    <div class="bypass-box" id="singleMode">
+      <div class="input-wrapper">
+        <span class="input-icon">🔗</span>
+        <input
+          type="url"
+          id="urlInput"
+          placeholder="https://linkvertise.com/... หรือ gateway.platoboost.com/..."
+          autocomplete="off"
+          spellcheck="false"
+        >
+      </div>
+      <button id="bypassBtn" onclick="doBypass()">
+        <span id="btnText">Bypass Now</span>
+        <span id="btnSpinner" class="spinner hidden"></span>
+      </button>
+    </div>
+
+    <!-- Input: Bulk Mode (textarea + file upload) -->
+    <div class="bypass-box bulk-mode" id="bulkMode" style="display:none; flex-direction:column;">
+      <div class="bulk-upload-area">
+        <textarea
+          id="bulkTextarea"
+          placeholder="วางลิงค์ทีละบรรทัด… (รองรับมากกว่า 4000 บรรทัด)&#10;https://linkvertise.com/...&#10;https://gateway.platoboost.com/...&#10;https://loot-links.com/..."
+          spellcheck="false"
+        ></textarea>
+        <div class="bulk-controls">
+          <div class="file-upload-wrapper">
+            <label for="fileInput" class="file-upload-btn">📎 แนบไฟล์</label>
+            <input type="file" id="fileInput" accept=".txt,.csv,.json" onchange="handleFileUpload(event)">
+            <span class="file-name" id="fileName"></span>
+          </div>
+          <div class="bulk-info">
+            <span id="lineCount">0</span> บรรทัด
+            <button class="clear-btn" onclick="clearBulk()">✕ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <button id="bulkBypassBtn" onclick="doBulkBypass()" style="width:100%;">
+        <span id="bulkBtnText">🚀 Bypass All</span>
+        <span id="bulkBtnSpinner" class="spinner hidden"></span>
+      </button>
+    </div>
+
+    <p class="input-hint" id="modeHint">กด Enter หรือคลิก Bypass Now • ผลลัพธ์จะปรากฏด้านล่าง</p>
+
+    <!-- Result -->
+    <div id="resultBox" class="result-box hidden"></div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section" id="stats">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">—</div>
+        <div class="stat-label">Links Bypassed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statRate">—</div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statProviders">100+</div>
+        <div class="stat-label">Supported Providers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statUptime">—</div>
+        <div class="stat-label">Uptime</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Supported Services -->
+  <section class="services-section">
+    <h2>🏆 Supported Providers</h2>
+    <p>ระบบรองรับ bypass ทั้งหมด — Key Systems, Ad-links, Social Unlock, File Hosts</p>
+    <div class="services-grid" id="servicesGrid">
+      <!-- Filled by JS -->
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-section">
+    <h2>⚡ วิธีใช้งาน</h2>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">1</div>
+        <h3>เลือก Engine</h3>
+        <p>เลือก engine ที่ต้องการ หรือใช้ Auto ให้ระบบเลือกให้อัตโนมัติ</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">2</div>
+        <h3>วาง Link หรือ Bulk</h3>
+        <p>วางลิงค์เดียว หรือเปิด Bulk Mode เพื่อวางหลายลิงค์พร้อมแนบไฟล์ .txt</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">3</div>
+        <h3>รับ Key / Link</h3>
+        <p>Copy ผลลัพธ์ไปใช้ได้เลย — ถ้าเป็น executor จะได้ Key สำหรับนำไปกรอก</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">🔓 KeyBypass</div>
+    <div class="footer-links">
+      <a href="/api/docs">API Docs</a>
+      <a href="/api/health">Health</a>
+      <a href="/api/stats">Stats JSON</a>
+      <a href="/api/supported">Supported</a>
+    </div>
+    <p class="footer-copy">Self-hosted • No external dependency • Engine v3</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

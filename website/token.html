@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAYOMBØYZ • Auto Quest Token Bridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: rgba(18, 20, 29, 0.9);
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #5865F2;
+      --primary-hover: #4752c4;
+      --success: #57F287;
+      --accent: #ed4245;
+      --gold: #fee75c;
+      --text: #ffffff;
+      --text-muted: #8e9297;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background-image: radial-gradient(circle at 50% 20%, rgba(88, 101, 242, 0.2), transparent 70%);
+    }
+    .container {
+      width: 100%;
+      max-width: 680px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(16px);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+    .title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--success);
+      font-size: 0.78rem;
+      margin-top: 0.5rem;
+      background: rgba(87, 242, 135, 0.1);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(87, 242, 135, 0.2);
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      padding: 0.75rem 0.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .section {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--success);
+    }
+    .desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      width: 100%;
+    }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-success {
+      background: #23a55a;
+      color: #fff;
+      width: 100%;
+    }
+    .btn-success:hover { background: #1d8d4c; }
+    .btn-drag {
+      background: rgba(88, 101, 242, 0.15);
+      border: 1px dashed var(--primary);
+      color: #a5b4fc;
+      padding: 0.75rem 1rem;
+      display: block;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      border-radius: 8px;
+      user-select: all;
+    }
+    .code-box {
+      position: relative;
+      background: #0d0e14;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+      word-break: break-all;
+      margin-bottom: 0.75rem;
+    }
+    .copy-btn {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: #0d0e14;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+      min-height: 260px;
+    }
+    .qr-box img {
+      max-width: 220px;
+      border-radius: 10px;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    .token-result-box {
+      display: none;
+      background: rgba(87, 242, 135, 0.08);
+      border: 1px solid rgba(87, 242, 135, 0.3);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+    .token-display {
+      background: #0d0e14;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--success);
+      word-break: break-all;
+      margin: 0.5rem 0 1rem 0;
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">𓆩 🪽 PAYOMBØYZ TOKEN BRIDGE 🪽 𓆪</div>
+      <div class="subtitle">ระบบช่วยดึง Discord User Token อัตโนมัติสำหรับ Auto Quest</div>
+      <div class="security-badge">🛡️ Zero Retention Architecture • ไร้ Database ปลอดภัย 100%</div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('qr')">📷 QR Code (เน็ตบ้าน)</button>
+      <button class="tab-btn" onclick="switchTab('bookmarklet')">⚡ Bookmarklet (มือถือ)</button>
+      <button class="tab-btn" onclick="switchTab('console')">💻 Console (PC)</button>
+    </div>
+
+    <!-- Tab 1: Web-Based QR Code (Zero Captcha Guarantee) -->
+    <div id="tab-qr" class="tab-content active">
+      <div class="section">
+        <div class="section-title">📷 สแกน QR Code บนเว็บนี้ (รันผ่านเน็ตคุณ ไม่ติด Captcha 100%)</div>
+        <p class="desc">
+          การสแกนผ่านเว็บนี้จะเชื่อมต่อ Discord ตรงจากเบราว์เซอร์ของคุณ (Residential IP) จึงไม่โดน Cloudflare บังคับแก้ Captcha เหมือนบนเซิร์ฟเวอร์ Cloud
+        </p>
+        <div class="qr-box" id="qrContainer">
+          <button class="btn btn-primary" id="startQrBtn" onclick="startWebRemoteAuth()" style="max-width: 260px;">
+            🚀 เริ่มสร้าง QR Code
+          </button>
+          <div id="qrStatusText" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+            กดปุ่มเพื่อเริ่มขั้นตอนสร้างคิวอาร์โค้ด
+          </div>
+        </div>
+
+        <div id="webTokenResult" class="token-result-box">
+          <div style="font-weight: 600; color: var(--success); margin-bottom: 0.25rem;">
+            ✅ ตรวจพบและดึง Token สำเร็จแล้ว!
+          </div>
+          <div class="token-display" id="retrievedTokenText">...</div>
+          <button class="btn btn-success" onclick="copyAndForwardToken()">
+            🚀 คัดลอก Token & นำไปส่งบอท Auto Quest ทันที
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Bookmarklet (Mobile & Web) -->
+    <div id="tab-bookmarklet" class="tab-content">
+      <div class="section">
+        <div class="section-title">⚡ ดึงผ่าน Bookmarklet (ง่ายที่สุดสำหรับมือถือและ iPad)</div>
+        <p class="desc">
+          ลากปุ่มด้านล่างนี้ขึ้นไปวางที่ <b>แถบบุ๊กมาร์ก (Bookmarks Bar)</b> ของเบราว์เซอร์ จากนั้นเปิดแท็บ Discord Web แล้วกดบุ๊กมาร์กนี้ 1 ครั้ง Token จะเด้งขึ้นมาทันที!
+        </p>
+        <a class="btn-drag" href="javascript:(function(){let t=(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken();if(t){prompt('🔑 Token ของคุณ (กด Ctrl+C เพื่อคัดลอก):',t);}else{alert('❌ ไม่พบ Token โปรดล็อกอิน Discord Web ก่อน');}})();">
+          👉 ลากปุ่มนี้ไปใส่ Bookmarks: [ 🔑 PAYOMBØYZ TOKEN ]
+        </a>
+        <a href="https://discord.com/app" target="_blank" class="btn btn-primary">
+          🌐 เปิด Discord Web ในแท็บใหม่
+        </a>
+      </div>
+    </div>
+
+    <!-- Tab 3: Console (PC 5 Sec) -->
+    <div id="tab-console" class="tab-content">
+      <div class="section">
+        <div class="section-title">💻 วางคำสั่ง Console 1 บรรทัด (สำหรับคนชอบ F12 บน PC)</div>
+        <p class="desc">
+          เปิด Discord บนเบราว์เซอร์หรือแอป PC > กด <code>Ctrl + Shift + I</code> > ไปที่แท็บ <b>Console</b> > วางโค้ดนี้แล้วกด Enter:
+        </p>
+        <div class="code-box" id="codeSnippet">
+          (webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()
+          <button class="copy-btn" onclick="copyCode()">📋 คัดลอก</button>
+        </div>
+        <p class="desc" style="margin-bottom: 0;">
+          *(หากมีคำเตือนสีแดงจาก Discord ให้พิมพ์ <code>allow pasting</code> แล้วกด Enter ก่อนวางโค้ด)*
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      PAYOMBØYZ AUTOMATION ENGINE • Discord Quests v10 Protocol<br>
+      ระบบไม่มีการจัดเก็บ Token ลงฮาร์ดดิสก์หรือเซิร์ฟเวอร์คนกลาง ปลอดภัย 100%
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function copyCode() {
+      const code = document.getElementById('codeSnippet').innerText.replace('📋 คัดลอก', '').trim();
+      navigator.clipboard.writeText(code).then(() => {
+        alert('คัดลอกสคริปต์ 1 บรรทัดเรียบร้อยแล้ว! นำไปวางใน Console ของ Discord ได้ทันที');
+      });
+    }
+
+    function copyAndForwardToken() {
+      const token = document.getElementById('retrievedTokenText').innerText.trim();
+      navigator.clipboard.writeText(token).then(() => {
+        alert('คัดลอก Token เรียบร้อย! นำไปส่งในช่องบอท Auto Quest หรือกดปุ่มเริ่มทำเควสได้ทันทีครับ');
+      });
+    }
+
+    // Web-Based Remote Auth Engine (Runs on User's Residential Browser)
+    let ws = null;
+    let rsaKeyPair = null;
+
+    async function startWebRemoteAuth() {
+      const btn = document.getElementById('startQrBtn');
+      const statusText = document.getElementById('qrStatusText');
+      const qrBox = document.getElementById('qrContainer');
+      btn.style.display = 'none';
+      statusText.innerText = '⚙️ กำลังสร้างกุญแจเข้ารหัส RSA-2048 ในเบราว์เซอร์...';
+
+      try {
+        rsaKeyPair = await window.crypto.subtle.generateKey(
+          {
+            name: "RSA-OAEP",
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([1, 0, 1]),
+            hash: "SHA-256"
+          },
+          true,
+          ["decrypt"]
+        );
+
+        const exportedPub = await window.crypto.subtle.exportKey("spki", rsaKeyPair.publicKey);
+        const encodedPub = btoa(String.fromCharCode.apply(null, new Uint8Array(exportedPub)));
+
+        statusText.innerText = '🌐 กำลังเชื่อมต่อ Discord Remote Auth Gateway...';
+        ws = new WebSocket("wss://remote-auth-gateway.discord.gg/?v=2");
+
+        ws.onopen = () => {
+          statusText.innerText = '⚡ เชื่อมต่อ Gateway สำเร็จ กำลังร้องขอ QR...';
+        };
+
+        ws.onmessage = async (event) => {
+          const data = JSON.parse(event.data);
+          const op = data.op;
+
+          if (op === "hello") {
+            const interval = data.heartbeat_interval || 41250;
+            setInterval(() => {
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ op: "heartbeat" }));
+              }
+            }, interval);
+
+            ws.send(JSON.stringify({
+              op: "init",
+              encoded_public_key: encodedPub
+            }));
+          } else if (op === "nonce_proof") {
+            const rawNonce = Uint8Array.from(atob(data.encrypted_nonce), c => c.charCodeAt(0));
+            const decNonce = await window.crypto.subtle.decrypt(
+              { name: "RSA-OAEP" },
+              rsaKeyPair.privateKey,
+              rawNonce
+            );
+            const nonceHash = await window.crypto.subtle.digest("SHA-256", decNonce);
+            let binary = '';
+            const bytes = new Uint8Array(nonceHash);
+            for (let i = 0; i < bytes.byteLength; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const proof = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            ws.send(JSON.stringify({ op: "nonce_proof", proof: proof }));
+          } else if (op === "pending_remote_init") {
+            const fingerprint = data.fingerprint;
+            const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://discord.com/ra/" + fingerprint;
+            qrBox.innerHTML = `
+              <img src="${qrUrl}" alt="Discord QR Code" />
+              <div style="margin-top: 1rem; font-size: 0.9rem; font-weight: 600; color: #5865F2;">
+                📱 เปิดแอป Discord บนมือถือ > การตั้งค่า > สแกนคิวอาร์โค้ด
+              </div>
+              <div style="font-size: 0.8rem; color: #8e9297; margin-top: 0.25rem;">
+                (เชื่อมต่อจากเน็ตบ้านของคุณ ไม่ติด Captcha 100%)
+              </div>
+            `;
+          } else if (op === "pending_ticket") {
+            qrBox.innerHTML = `
+              <div style="font-size: 1.1rem; font-weight: 600; color: #fee75c; text-align: center;">
+                📲 ตรวจพบการสแกนแล้ว!<br>
+                <span style="font-size: 0.9rem; color: #fff;">โปรดกดปุ่ม <b>"ยืนยันการเข้าสู่ระบบ (Yes, log me in)"</b> บนโทรศัพท์ทันที</span>
+              </div>
+            `;
+          } else if (op === "pending_login") {
+            const ticket = data.ticket;
+            qrBox.innerHTML = `<div style="color: #38bdf8;">⚡ กำลังแลกเปลี่ยน Token ผ่านเบราว์เซอร์...</div>`;
+
+            try {
+              const resp = await fetch("https://discord.com/api/v9/users/@me/remote-auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ticket: ticket })
+              });
+              if (resp.ok) {
+                const loginRes = await resp.json();
+                const rawEncToken = Uint8Array.from(atob(loginRes.encrypted_token), c => c.charCodeAt(0));
+                const decTokenBuf = await window.crypto.subtle.decrypt(
+                  { name: "RSA-OAEP" },
+                  rsaKeyPair.privateKey,
+                  rawEncToken
+                );
+                const decToken = new TextDecoder().decode(decTokenBuf);
+                qrBox.style.display = 'none';
+                const resultBox = document.getElementById('webTokenResult');
+                resultBox.style.display = 'block';
+                document.getElementById('retrievedTokenText').innerText = decToken;
+              } else {
+                const errJson = await resp.json();
+                qrBox.innerHTML = `<div style="color: #ed4245;">❌ การแลกเปลี่ยนล้มเหลว: ${JSON.stringify(errJson)}</div>`;
+              }
+            } catch (err) {
+              qrBox.innerHTML = `<div style="color: #ed4245;">❌ Network Error: ${err.message}</div>`;
+            }
+          } else if (op === "cancel") {
+            qrBox.innerHTML = `<div style="color: #ed4245;">❌ ยกเลิกเซสชันจากโทรศัพท์ กรุณารีเฟรชหน้าเว็บเพื่อลองใหม่</div>`;
+          }
+        };
+
+        ws.onerror = (e) => {
+          statusText.innerText = '❌ ไม่สามารถเชื่อมต่อ Discord Gateway ได้';
+        };
+      } catch (err) {
+        statusText.innerText = '❌ เกิดข้อผิดพลาด: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

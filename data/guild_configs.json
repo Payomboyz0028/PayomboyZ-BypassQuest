@@ -1,0 +1,23 @@
+{
+  "1549398019970179152": {
+    "bypass_channel_id": 1555389925615079484,
+    "result_channel_id": 1563723925119176774,
+    "bypass_log_channel_id": 1563723925119176774,
+    "script_channel_id": 1555406284482683025,
+    "panel_channel_id": 1555389925615079484,
+    "panel_message_id": 1561045709946617987,
+    "mode": "script",
+    "verify_role_id": 1549536757484101814,
+    "verify_channel_id": 1549803866134941767,
+    "verify_panel_message_id": 1560977989590581272,
+    "verify_log_channel_id": 1555390535215358073,
+    "status_channel_id": 1549820106287349832,
+    "status_message_id": 1564710384353550336
+  },
+  "1562437370618323005": {
+    "result_channel_id": 1562591400468684891,
+    "bypass_log_channel_id": 1562591400468684891,
+    "bypass_channel_id": 1562591400468684891,
+    "panel_channel_id": 1562591400468684891
+  }
+}

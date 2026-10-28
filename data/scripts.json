@@ -1,0 +1,318 @@
+{
+  "rscript": [
+    {
+      "name": "Infinite Yield",
+      "game": "universal",
+      "type": "admin",
+      "url": "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/main.lua",
+      "description": "Admin GUI สำหรับ Roblox — คำสั่งบริหารเกมครบวงจร เหมาะทุกเกม",
+      "executor": "krnl, synapse, fluxus, scriptware"
+    },
+    {
+      "name": "Dark Hub",
+      "game": "universal",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/RandomScripts/RobloxScripts/main/DarkHub.lua",
+      "description": "All-in-one script สำหรับฟาร์มเกมยอดนิยมบน Roblox",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Krnl Hub",
+      "game": "universal",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/RandomScripts/RobloxScripts/main/KrnlHub.lua",
+      "description": "สคริปต์ฟาร์ม สำหรับ executor Krnl โดยเฉพาะ",
+      "executor": "krnl"
+    },
+    {
+      "name": "Owl Hub",
+      "game": "universal",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/OwlHub/OwlHub/main/OwlHub.lua",
+      "description": "Owl Hub — Auto farm สำหรับเกม Roblox หลากหลายประเภท",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Solara Hub",
+      "game": "universal",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/SolaraHub/Solara/main/Solara.lua",
+      "description": "Solara Hub — Universal script สำหรับฟาร์มเกม",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "Jailbreak Hub",
+      "game": "Jailbreak",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/EzrealSlayer/Jailbreak-Hub/main/JailbreakHub.lua",
+      "description": "Auto farm สำหรับเกม Jailbreak — ฟาร์มเงิน, ปล้นธนาคารอัตโนมัติ",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Tower of Hell Script",
+      "game": "Tower of Hell",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/TOH/main/TOH.lua",
+      "description": "Auto complete สำหรับ Tower of Hell — ปีนอัตโนมัติ, ไม่ตก",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "Arsenal Aimlock",
+      "game": "Arsenal",
+      "type": "aimbot",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/Arsenal/main/ArsenalAim.lua",
+      "description": "Aimlock + ESP สำหรับ Arsenal — silent aim, wallhack, triggerbot",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Phantom Forces Hub",
+      "game": "Phantom Forces",
+      "type": "aimbot",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/PF/main/PFHub.lua",
+      "description": "Aimbot + ESP สำหรับ Phantom Forces — silent aim, no recoil, wallbang",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "BedWars Hub",
+      "game": "BedWars",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/BedWars/main/BedWarsHub.lua",
+      "description": "Auto farm สำหรับ BedWars — anti-void, auto bridge, kill aura",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "MM2 Hub",
+      "game": "Murder Mystery 2",
+      "type": "mod",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/MM2/main/MM2.lua",
+      "description": "ESP สำหรับ Murder Mystery 2 — ดูตัวร้าย, ดูอาวุธ, ดูผ่านกำแพง",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Doors ESP",
+      "game": "Doors",
+      "type": "esp",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/Doors/main/DoorsESP.lua",
+      "description": "ESP สำหรับ Doors — ดู monsters, ดู exit, auto-door open",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "Da Hood Hub",
+      "game": "Da Hood",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/DaHood/main/DaHoodHub.lua",
+      "description": "Auto farm สำหรับ Da Hood — auto arrest, auto rob, ESP",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Pet Simulator X Auto Farm",
+      "game": "Pet Simulator X",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/PSX/main/PSXAutoFarm.lua",
+      "description": "Auto farm สำหรับ Pet Simulator X — เดินอัตโนมัติ, เปิดไข่, แลกเปลี่ยน",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Tower Defense Simulator Hub",
+      "game": "Tower Defense Simulator",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/TDS/main/TDS.lua",
+      "description": "Auto play สำหรับ Tower Defense Simulator — วางหน่วยอัตโนมัติ, auto-farm coins",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "Adopt Me Auto Farm",
+      "game": "Adopt Me!",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/AdoptMe/main/AdoptMeFarm.lua",
+      "description": "Auto farm สำหรับ Adopt Me! — เลี้ยงสัตว์อัตโนมัติ, ฟาร์มเงิน",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "Natural Disaster Survival Hub",
+      "game": "Natural Disaster Survival",
+      "type": "mod",
+      "url": "https://raw.githubusercontent.com/ezrealSlayer/NDS/main/NDS.lua",
+      "description": "Auto survival สำหรับ Natural Disaster Survival — หาที่หลบอัตโนมัติ",
+      "executor": "krnl, synapse, fluxus"
+    },
+    {
+      "name": "Legend Checker",
+      "game": "universal",
+      "type": "tool",
+      "url": "",
+      "description": "เช็ค Legendary pet ในเกม Pet Simulator / Anime simulators",
+      "executor": "krnl, synapse"
+    },
+    {
+      "name": "Auto GG Script",
+      "game": "universal",
+      "type": "mod",
+      "url": "",
+      "description": "สคริปต์ community สำหรับเกม Roblox ทั่วไป",
+      "executor": "krnl, synapse, fluxus"
+    }
+  ],
+  "bloxscript": [
+    {
+      "name": "Blox Fruit Auto Farm",
+      "game": "Blox Fruits",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ Blox Fruits — ฟาร์ม Beli, Exp, Bones อัตโนมัติ รองรับทุก Sea",
+      "executor": "blox-script, fluxus, krnl"
+    },
+    {
+      "name": "Blox Fruit NPC Farm",
+      "game": "Blox Fruits",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/NPCFarm.lua",
+      "description": "Auto NPC farm สำหรับ Blox Fruits — ตี NPC อัตโนมัติ, เก็บดรอป",
+      "executor": "blox-script, fluxus"
+    },
+    {
+      "name": "Blox Fruit Fruit Sniper",
+      "game": "Blox Fruits",
+      "type": "tool",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/FruitSniper.lua",
+      "description": "Fruit Sniper สำหรับ Blox Fruits — กดซื้อผลไม้หายากอัตโนมัติเมื่อรีเฟรช",
+      "executor": "blox-script, krnl"
+    },
+    {
+      "name": "Blox Fruit Sea Beast Hunter",
+      "game": "Blox Fruits",
+      "type": "hunt",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/SeaBeast.lua",
+      "description": "ล่า Sea Beast อัตโนมัติใน Blox Fruits — ฟาร์ม Fragment และ Bones",
+      "executor": "blox-script, krnl, synapse"
+    },
+    {
+      "name": "Blox Fruit Raid Farm",
+      "game": "Blox Fruits",
+      "type": "raid",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/RaidFarm.lua",
+      "description": "Auto Raid สำหรับ Blox Fruits — ฟาร์ม Fragment อัตโนมัติ, เปิดประตู",
+      "executor": "blox-script, fluxus"
+    },
+    {
+      "name": "Blox Fruit Stat Hub",
+      "game": "Blox Fruits",
+      "type": "stat",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/StatHub.lua",
+      "description": "จัดการ Stats Blox Fruits อัตโนมัติ — Melee, Defense, Sword, Gun, Fruit",
+      "executor": "blox-script, krnl"
+    },
+    {
+      "name": "Blox Fruit Shop Hub",
+      "game": "Blox Fruits",
+      "type": "shop",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/ShopHub.lua",
+      "description": "Auto Shop สำหรับ Blox Fruits — ซื้อไอเทม, อัปเกรดอาวุธอัตโนมัติ",
+      "executor": "blox-script"
+    },
+    {
+      "name": "Blox Fruit Quest Auto-Complete",
+      "game": "Blox Fruits",
+      "type": "quest",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/QuestComplete.lua",
+      "description": "Auto ทำเควส Blox Fruits — รับเควส, ไปตี, ส่งเควส อัตโนมัติ",
+      "executor": "blox-script, krnl, synapse"
+    },
+    {
+      "name": "Blox Legend Auto Play",
+      "game": "Blox Legend",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/BloxLegendScript/BloxLegend/main/AutoPlay.lua",
+      "description": "Auto Play สำหรับ Blox Legend — ฟาร์มเลเวล, ตีบอส, เก็บดรอป",
+      "executor": "blox-script, fluxus"
+    },
+    {
+      "name": "Blox Legend Dungeon Farm",
+      "game": "Blox Legend",
+      "type": "dungeon",
+      "url": "https://raw.githubusercontent.com/BloxLegendScript/BloxLegend/main/DungeonFarm.lua",
+      "description": "Auto dungeon สำหรับ Blox Legend — ฟาร์มดันเจี้ยน, ของหายาก",
+      "executor": "blox-script"
+    },
+    {
+      "name": "King Legacy Auto Farm",
+      "game": "King Legacy",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/KingLegacyScript/KingLegacy/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ King Legacy (เกมโจรสลัด) — ฟาร์ม Beli, Exp, เกาะ",
+      "executor": "blox-script, krnl, fluxus"
+    },
+    {
+      "name": "Grand Piece Auto Farm",
+      "game": "Grand Piece Online",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/GPOScript/GPO/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ Grand Piece Online — ฟาร์ม Peli, ฝึกฝน, ตี NPC",
+      "executor": "blox-script, krnl"
+    },
+    {
+      "name": "Project Slayers Auto Farm",
+      "game": "Project Slayers",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/ProjectSlayers/PS/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ Project Slayers — ฟาร์มปีศาจ, เก็บ Exp, ฝึกฝน",
+      "executor": "blox-script, fluxus"
+    },
+    {
+      "name": "A Piece Auto Farm",
+      "game": "A Piece",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/APieceScript/APiece/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ A Piece (เกมโจรสลัด) — ฟาร์มเควส, ฝึกฝน, ตี NPC",
+      "executor": "blox-script, krnl"
+    },
+    {
+      "name": "Anime Fighters Sim Auto Farm",
+      "game": "Anime Fighters Simulator",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/AnimeFighters/AFS/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ Anime Fighters Simulator — ฟาร์ม金币, เปิดไข่, อัป fighters",
+      "executor": "blox-script, krnl, synapse"
+    },
+    {
+      "name": "Anime Vanguards Auto Farm",
+      "game": "Anime Vanguards",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/AnimeVanguard/AV/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ Anime Vanguards — ฟาร์ม stage, evolve ตัวละคร",
+      "executor": "blox-script, fluxus"
+    },
+    {
+      "name": "Fisch Auto Farm",
+      "game": "Fisch",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/FischScript/Fisch/main/AutoFarm.lua",
+      "description": "Auto Farm สำหรับ Fisch — ตกปลาอัตโนมัติ, ขายปลา, อัประดับ",
+      "executor": "blox-script, krnl, fluxus"
+    },
+    {
+      "name": "Fish Farm Hub",
+      "game": "Fisch",
+      "type": "farm",
+      "url": "https://raw.githubusercontent.com/FischScript/Fisch/main/FishHub.lua",
+      "description": "Fish Hub สำหรับ Fisch — auto fish, auto sell, ดู Rare fish ผ่าน ESP",
+      "executor": "blox-script, krnl"
+    },
+    {
+      "name": "GPO Stat Manager",
+      "game": "Grand Piece Online",
+      "type": "stat",
+      "url": "https://raw.githubusercontent.com/GPOScript/GPO/main/StatManager.lua",
+      "description": "จัดการ Stats GPO — จัดสรร stats, reset อัตโนมัติ",
+      "executor": "blox-script"
+    },
+    {
+      "name": "Blox Fruit ESP",
+      "game": "Blox Fruits",
+      "type": "esp",
+      "url": "https://raw.githubusercontent.com/BloxFruitScript/BloxFruit/main/ESP.lua",
+      "description": "ESP สำหรับ Blox Fruits — ดู player, ดู fruit ผ่านกำแพง, ดู NPC",
+      "executor": "blox-script, krnl, synapse"
+    }
+  ]
+}
