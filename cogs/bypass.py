@@ -46,12 +46,21 @@ class BypassCog(commands.Cog):
             )
             return
 
+        await interaction.response.defer(ephemeral=private, thinking=True)
         provider = DomainDetector.detect(url)
         loading_embed = EmbedFactory.create_loading(url, provider)
-        await interaction.response.send_message(embed=loading_embed, ephemeral=private)
+        await interaction.edit_original_response(embed=loading_embed)
 
         start_time = time.time()
-        result = await bypass_engine.bypass_url(url)
+        try:
+            result = await asyncio.wait_for(bypass_engine.bypass_url(url), timeout=11.0)
+        except asyncio.TimeoutError:
+            result = {
+                "success": False,
+                "error": "⏱️ การ Bypass ใช้เวลานานเกินกำหนด (Timeout 11s) ลิงก์อาจติด Cloudflare Turnstile ขั้นสูง",
+                "provider": provider,
+                "time_taken": 11.0
+            }
         elapsed = time.time() - start_time
 
         guild_id = interaction.guild.id if interaction.guild else None

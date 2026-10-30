@@ -417,19 +417,25 @@ class SetupCog(commands.Cog):
             # Build different panels based on mode
             try:
                 if value == "bypass":
-                    # Bypass-only panel
-                    from cogs.panel import PanelView
-                    panel_embed = discord.Embed(
-                        title="🔓 Bypass Ad-Link Panel",
-                        description=(
-                            "กด **Bypass Link** เพื่อเปิดหน้าต่างใส่ลิงค์\n"
-                            "รองรับ: Linkvertise • LootLabs • Platoboost • Work.ink • Rekonise"
-                        ),
-                        color=COLOR_PRIMARY
-                    )
-                    panel_embed.set_footer(text="Self-hosted Bypass Engine")
-                    view = PanelView()
-                    msg = await target_channel.send(embed=panel_embed, view=view)
+                    # Bypass-only Luxury Components V2 Panel
+                    from cogs.panel import send_bypass_v2_panel, edit_bypass_v2_panel
+                    bot_token = self.bot.http.token
+                    existing_msg_id = guild_config.get_panel_message(interaction.guild.id) if interaction.guild else None
+                    msg = None
+                    if existing_msg_id:
+                        ok, _ = await edit_bypass_v2_panel(target_channel.id, existing_msg_id, bot_token)
+                        if ok:
+                            try:
+                                msg = await target_channel.fetch_message(existing_msg_id)
+                            except Exception:
+                                pass
+                    if not msg:
+                        ok, res = await send_bypass_v2_panel(target_channel.id, bot_token)
+                        if ok and isinstance(res, dict) and "id" in res:
+                            try:
+                                msg = await target_channel.fetch_message(int(res["id"]))
+                            except Exception:
+                                pass
 
                 elif value == "script":
                     # Script-only = NO PANEL, Q&A auto-reply handler only

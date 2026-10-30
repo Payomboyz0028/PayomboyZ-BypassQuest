@@ -154,90 +154,97 @@ async def _bypass_platoboost_native(url: str) -> tuple[str | None, str]:
         except Exception:
             pass
 
-    # Step 2: Headless Patchright automation
-    from patchright.async_api import async_playwright
-    async with _BROWSER_SEM:
+    # Step 2: Fast Headless browser automation with strict 6s timeout
+    async def _solve_platoboost_browser():
         try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--no-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                        "--blink-settings=imagesEnabled=false"
-                    ]
-                )
-                page = await browser.new_page()
+            from patchright.async_api import async_playwright
+        except ImportError:
+            try:
+                from playwright.async_api import async_playwright
+            except ImportError:
+                return None, "failed"
 
-                # Fast check page body for expiration
-                try:
-                    await page.goto(clean_url, wait_until="domcontentloaded", timeout=10000)
-                except Exception:
-                    pass
+        async with _BROWSER_SEM:
+            try:
+                async with async_playwright() as p:
+                    browser = await p.chromium.launch(
+                        headless=True,
+                        args=[
+                            "--no-sandbox",
+                            "--disable-dev-shm-usage",
+                            "--disable-blink-features=AutomationControlled",
+                            "--blink-settings=imagesEnabled=false"
+                        ]
+                    )
+                    page = await browser.new_page()
 
-                await asyncio.sleep(0.8)
-                body = await page.evaluate("() => document.body ? document.body.innerText : ''")
-                if "expired" in body.lower():
-                    await browser.close()
-                    return "EXPIRED_LINK", "platoboost-expired"
-
-                # Wait for the client-side 4-second countdown
-                await asyncio.sleep(4.0)
-
-                # Remove overlay divs
-                await page.evaluate("""() => {
-                    document.querySelectorAll('div').forEach(d => {
-                        const style = window.getComputedStyle(d);
-                        if (style.position === 'fixed' || parseInt(style.zIndex || '0') > 10) {
-                            d.remove();
-                        }
-                    });
-                }""")
-
-                # Click any button matching interactive action text
-                await page.evaluate("""() => {
-                    const targets = ['continue', 'next', 'get key', 'claim', 'free access', 'unlock'];
-                    for (const b of document.querySelectorAll('button, a, div[role="button"]')) {
-                        const t = (b.innerText || '').toLowerCase();
-                        if (targets.some(x => t.includes(x))) {
-                            b.click();
-                            break;
-                        }
-                    }
-                }""")
-                await asyncio.sleep(1.2)
-
-                # Query status API or read key from DOM input
-                key_result = None
-                if ticket:
                     try:
-                        async with AsyncSession(impersonate="chrome124") as s:
-                            resp = await s.get(f"https://{api_host}/api/session/status?ticket={ticket}", timeout=3)
-                            if resp.status_code == 200:
-                                data = resp.json()
-                                k = data.get("data", {}).get("key")
-                                if k and k != "KEY_NOT_FOUND":
-                                    key_result = k
+                        await page.goto(clean_url, wait_until="domcontentloaded", timeout=4000)
                     except Exception:
                         pass
 
-                if not key_result:
-                    key_result = await page.evaluate("""() => {
-                        const inp = document.querySelector('input');
-                        if (inp && inp.value && inp.value.length > 5) return inp.value;
-                        const body = document.body ? document.body.innerText : '';
-                        const m = body.match(/FREE_[A-Za-z0-9]+/);
-                        return m ? m[0] : null;
+                    await asyncio.sleep(0.5)
+                    body = await page.evaluate("() => document.body ? document.body.innerText : ''")
+                    if "expired" in body.lower():
+                        await browser.close()
+                        return "EXPIRED_LINK", "platoboost-expired"
+
+                    # Wait for 3.5s countdown
+                    await asyncio.sleep(3.5)
+
+                    # Remove overlays & click action button
+                    await page.evaluate("""() => {
+                        document.querySelectorAll('div').forEach(d => {
+                            const style = window.getComputedStyle(d);
+                            if (style.position === 'fixed' || parseInt(style.zIndex || '0') > 10) {
+                                d.remove();
+                            }
+                        });
+                        const targets = ['continue', 'next', 'get key', 'claim', 'free access', 'unlock'];
+                        for (const b of document.querySelectorAll('button, a, div[role="button"]')) {
+                            const t = (b.innerText || '').toLowerCase();
+                            if (targets.some(x => t.includes(x))) {
+                                b.click();
+                                break;
+                            }
+                        }
                     }""")
+                    await asyncio.sleep(0.8)
 
-                await browser.close()
-                if key_result:
-                    return key_result, "platoboost-native-timer"
-        except Exception as e:
-            print(f"[Platoboost Error] {e}")
+                    key_result = None
+                    if ticket:
+                        try:
+                            async with AsyncSession(impersonate="chrome124") as s:
+                                resp = await s.get(f"https://{api_host}/api/session/status?ticket={ticket}", timeout=2)
+                                if resp.status_code == 200:
+                                    data = resp.json()
+                                    k = data.get("data", {}).get("key")
+                                    if k and k != "KEY_NOT_FOUND":
+                                        key_result = k
+                        except Exception:
+                            pass
 
-    return None, "failed"
+                    if not key_result:
+                        key_result = await page.evaluate("""() => {
+                            const inp = document.querySelector('input');
+                            if (inp && inp.value && inp.value.length > 5) return inp.value;
+                            const body = document.body ? document.body.innerText : '';
+                            const m = body.match(/FREE_[A-Za-z0-9]+/);
+                            return m ? m[0] : null;
+                        }""")
+
+                    await browser.close()
+                    if key_result:
+                        return key_result, "platoboost-native-timer"
+            except Exception as e:
+                print(f"[Platoboost Error] {e}")
+
+        return None, "failed"
+
+    try:
+        return await asyncio.wait_for(_solve_platoboost_browser(), timeout=6.0)
+    except asyncio.TimeoutError:
+        return None, "platoboost-timeout"
 
 # ═══════════════════════════════════════════════════════════════
 # 2. LootLabs / LootLinks Native Solver
@@ -296,121 +303,131 @@ async def _bypass_lootlabs_native(url: str) -> tuple[str | None, str]:
     except Exception:
         pass
 
-    # Hardware-Accelerated Multi-Task & Turnstile Solver
-    from patchright.async_api import async_playwright
-    async with _BROWSER_SEM:
+    # Fast Headless Task & Turnstile Solver (Cloud-Safe)
+    async def _solve_lootlabs_browser():
         try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(
-                    headless=False,
-                    channel="chrome",
-                    args=[
-                        "--no-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                        "--use-gl=angle",
-                        "--use-angle=d3d11",
-                        "--enable-features=Vulkan,DefaultANGLEVulkan,WebGPU",
-                        "--enable-unsafe-webgpu",
-                        "--window-position=-2400,-2400",
-                        "--window-size=900,900",
-                    ]
-                )
-                context = await browser.new_context(locale="en-US")
-                main_page = await context.new_page()
+            from patchright.async_api import async_playwright
+        except ImportError:
+            try:
+                from playwright.async_api import async_playwright
+            except ImportError:
+                return None, "failed"
 
-                found_dest = None
-                done_event = asyncio.Event()
+        async with _BROWSER_SEM:
+            try:
+                async with async_playwright() as p:
+                    browser = await p.chromium.launch(
+                        headless=True,
+                        args=[
+                            "--no-sandbox",
+                            "--disable-dev-shm-usage",
+                            "--disable-blink-features=AutomationControlled",
+                            "--blink-settings=imagesEnabled=false"
+                        ]
+                    )
+                    context = await browser.new_context(locale="en-US")
+                    main_page = await context.new_page()
 
-                def on_ws(ws):
-                    def on_frame(payload):
-                        nonlocal found_dest
-                        s = str(payload)
-                        if s.startswith("r:"):
-                            dec = _decrypt_lootlabs_xor(s[2:])
-                            if dec and dec.startswith("http") and "lootlabs" not in dec:
-                                found_dest = dec
-                                done_event.set()
-                    ws.on("framereceived", on_frame)
+                    found_dest = None
+                    done_event = asyncio.Event()
 
-                main_page.on("websocket", on_ws)
+                    def on_ws(ws):
+                        def on_frame(payload):
+                            nonlocal found_dest
+                            s = str(payload)
+                            if s.startswith("r:"):
+                                dec = _decrypt_lootlabs_xor(s[2:])
+                                if dec and dec.startswith("http") and "lootlabs" not in dec:
+                                    found_dest = dec
+                                    done_event.set()
+                        ws.on("framereceived", on_frame)
 
-                try:
-                    await main_page.goto(url, wait_until="domcontentloaded", timeout=7000)
-                except Exception:
-                    pass
+                    main_page.on("websocket", on_ws)
 
-                await asyncio.sleep(0.5)
-
-                # 1. Check Task 41 (Captcha)
-                task41 = await main_page.query_selector("div[class*='41_']")
-                if task41:
-                    urid = await task41.get_attribute("id")
-                    await task41.click()
-                    await asyncio.sleep(0.3)
-
-                    captcha_tab = await context.new_page()
                     try:
-                        await captcha_tab.goto(f"https://nerventualken.com/captcha?urid={urid}", wait_until="domcontentloaded", timeout=6000)
-                        await captcha_tab.bring_to_front()
-
-                        clicked_cb = False
-                        for _ in range(8): # Fast ~4s window
-                            await asyncio.sleep(0.5)
-                            go_active = await captcha_tab.evaluate("() => { const b = document.getElementById('go'); return b && !b.disabled; }")
-                            if go_active:
-                                await captcha_tab.click("#go")
-                                await asyncio.sleep(1.0)
-                                break
-
-                            if not clicked_cb:
-                                for f in captcha_tab.frames:
-                                    if "cloudflare" in f.url or "turnstile" in f.url:
-                                        cb = await f.query_selector("input[type='checkbox']")
-                                        if cb and not await cb.is_checked():
-                                            await cb.click()
-                                            clicked_cb = True
+                        await main_page.goto(url, wait_until="domcontentloaded", timeout=4000)
                     except Exception:
                         pass
-                    finally:
+
+                    await asyncio.sleep(0.4)
+
+                    # 1. Check Task 41 (Captcha)
+                    task41 = await main_page.query_selector("div[class*='41_']")
+                    if task41:
                         try:
-                            await captcha_tab.close()
+                            urid = await task41.get_attribute("id")
+                            await task41.click()
+                            await asyncio.sleep(0.2)
+
+                            captcha_tab = await context.new_page()
+                            try:
+                                await captcha_tab.goto(f"https://nerventualken.com/captcha?urid={urid}", wait_until="domcontentloaded", timeout=4000)
+                                await captcha_tab.bring_to_front()
+
+                                clicked_cb = False
+                                for _ in range(5):
+                                    await asyncio.sleep(0.4)
+                                    go_active = await captcha_tab.evaluate("() => { const b = document.getElementById('go'); return b && !b.disabled; }")
+                                    if go_active:
+                                        await captcha_tab.click("#go")
+                                        await asyncio.sleep(0.5)
+                                        break
+
+                                    if not clicked_cb:
+                                        for f in captcha_tab.frames:
+                                            if "cloudflare" in f.url or "turnstile" in f.url:
+                                                cb = await f.query_selector("input[type='checkbox']")
+                                                if cb and not await cb.is_checked():
+                                                    await cb.click()
+                                                    clicked_cb = True
+                            except Exception:
+                                pass
+                            finally:
+                                try:
+                                    await captcha_tab.close()
+                                except Exception:
+                                    pass
+                                await main_page.bring_to_front()
                         except Exception:
                             pass
-                        await main_page.bring_to_front()
 
-                # 2. Click remaining sponsor tasks
-                other_tasks = await main_page.query_selector_all(".task:not([class*='41_'])")
-                for ot in other_tasks:
-                    try:
-                        await ot.click()
-                        await asyncio.sleep(0.3)
-                    except Exception:
-                        pass
+                    # 2. Click remaining sponsor tasks
+                    other_tasks = await main_page.query_selector_all(".task:not([class*='41_'])")
+                    for ot in other_tasks[:3]:
+                        try:
+                            await ot.click()
+                            await asyncio.sleep(0.2)
+                        except Exception:
+                            pass
 
-                # 3. Poll WebSocket and Unlock button (up to ~6s before fallback)
-                for _ in range(12):
-                    if done_event.is_set() or found_dest:
-                        break
-                    await asyncio.sleep(0.5)
-                    try:
-                        btn_active = await main_page.evaluate("""() => {
-                            const b = document.querySelector('#unlockBtn');
-                            return b && !b.disabled;
-                        }""")
-                        if btn_active:
-                            await main_page.click("#unlockBtn")
-                            await asyncio.sleep(1.0)
-                    except Exception:
-                        pass
+                    # 3. Poll WebSocket and Unlock button (up to ~3.5s)
+                    for _ in range(7):
+                        if done_event.is_set() or found_dest:
+                            break
+                        await asyncio.sleep(0.5)
+                        try:
+                            btn_active = await main_page.evaluate("""() => {
+                                const b = document.querySelector('#unlockBtn');
+                                return b && !b.disabled;
+                            }""")
+                            if btn_active:
+                                await main_page.click("#unlockBtn")
+                                await asyncio.sleep(0.8)
+                        except Exception:
+                            pass
 
-                await browser.close()
-                if found_dest and is_valid_result(found_dest, url):
-                    return found_dest, "lootlabs-task-solver"
-        except Exception as e:
-            print(f"[LootLabs Error] {e}")
+                    await browser.close()
+                    if found_dest and is_valid_result(found_dest, url):
+                        return found_dest, "lootlabs-task-solver"
+            except Exception as e:
+                print(f"[LootLabs Error] {e}")
 
-    return None, "failed"
+        return None, "failed"
+
+    try:
+        return await asyncio.wait_for(_solve_lootlabs_browser(), timeout=6.0)
+    except asyncio.TimeoutError:
+        return None, "lootlabs-timeout"
 
 # ═══════════════════════════════════════════════════════════════
 # 3. Work.ink Native Solver
@@ -491,6 +508,18 @@ class BypassEngine:
     """Master Multi-Tier Self-Hosted Bypass Orchestrator."""
 
     async def bypass_url(self, url: str) -> dict:
+        try:
+            return await asyncio.wait_for(self._bypass_url_internal(url), timeout=9.5)
+        except asyncio.TimeoutError:
+            provider = DomainDetector.detect(url)
+            return {
+                "success": False,
+                "error": "⏱️ การ Bypass ใช้เวลานานเกินกำหนด (Timeout 9s) ลิงก์อาจติด Cloudflare ขั้นสูง หรือปลายทางไม่ตอบสนอง กรุณาลองใหม่อีกครั้ง",
+                "provider": provider,
+                "time_taken": 9.5
+            }
+
+    async def _bypass_url_internal(self, url: str) -> dict:
         url = url.strip()
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
