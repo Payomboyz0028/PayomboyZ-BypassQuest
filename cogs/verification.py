@@ -12,10 +12,11 @@ import io
 import time
 import asyncio
 import traceback
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, Tuple, Any
 
 from utils.config_manager import guild_config
 from utils.verify_manager import verify_manager
@@ -24,6 +25,138 @@ from utils.verify_card_generator import generate_verification_card_sync
 
 COLOR_VERIFY_RED = 0xFF0000  # Exact FlowAuth red accent
 DEFAULT_VERIFIED_ROLE_ID = 1549536757484101814  # PAYOMBØYZ HUB: ⊹-:-.˚ ยืนยันตัวตนแล้ว・
+OFFICIAL_PAYOMBOYZ_VERIFY_BANNER = "https://cdn.discordapp.com/attachments/1549803866134941767/1565169893043601448/payomboyz_verify_welcome.gif?ex=6ae4964d&is=6ae344cd&hm=9398f38abe9f07bb0afc1a6c85a3fdff0224dca7ea83bfcfb47bb9266f3b14d3&"
+
+
+def build_verify_v2_payload(guild_id: Optional[int] = None, role_id: Optional[int] = None, banner_url: Optional[str] = None) -> dict:
+    """Builds Discord Components V2 Container message (flags: 32768) for high-end verification card."""
+    target_role_id = role_id or DEFAULT_VERIFIED_ROLE_ID
+    banner = banner_url or OFFICIAL_PAYOMBOYZ_VERIFY_BANNER
+
+    return {
+        "flags": 32768,
+        "embeds": [],
+        "components": [
+            {
+                "type": 17,
+                "accent_color": COLOR_VERIFY_RED,
+                "components": [
+                    {
+                        "type": 10,
+                        "content": "## <a:pbg_wing_l:1562553182859563150> **VERIFICATION SYSTEM** <a:pbg_wing_r:1562553185325940748>\n### ⚡ **PAYOMBØYZ SENTINEL ANTI-BOT GATE**"
+                    },
+                    {"type": 14, "divider": True, "spacing": 1},
+                    {
+                        "type": 10,
+                        "content": (
+                            "> 🛡️ **ระบบยืนยันตัวตนสมาชิกอัตโนมัติ (Anti-Bot Sentinel Protocol)**\n"
+                            "> 🧩 **ป้องกันการสแปมและบอทแปลกปลอมเข้าสู่เซิร์ฟเวอร์ 100%**\n"
+                            f"> 🏷️ **รับยศปลดล็อกห้องทันที:** <@&{target_role_id}>\n"
+                            "> 🟢 **กดปุ่ม \"ยืนยันตัวตน\" ด้านล่าง เพื่อรับรหัสภาพ Captcha และปลดล็อกสิทธิ์ทันที**"
+                        )
+                    },
+                    {"type": 14, "divider": True, "spacing": 1},
+                    {
+                        "type": 1,
+                        "components": [
+                            {
+                                "type": 2,
+                                "style": 3,
+                                "custom_id": "payom_verify:start",
+                                "label": "ยืนยันตัวตน",
+                                "emoji": {"name": "🟢"}
+                            },
+                            {
+                                "type": 2,
+                                "style": 2,
+                                "custom_id": "payom_verify:help",
+                                "label": "วิธีผ่าน Captcha",
+                                "emoji": {"name": "❓"}
+                            },
+                            {
+                                "type": 2,
+                                "style": 2,
+                                "custom_id": "payom_verify:status",
+                                "label": "เช็คสถานะยศ",
+                                "emoji": {"name": "🔍"}
+                            }
+                        ]
+                    },
+                    {
+                        "type": 1,
+                        "components": [
+                            {
+                                "type": 2,
+                                "style": 1,
+                                "custom_id": "payom_verify:vip_roles",
+                                "label": "สิทธิ์ยศ VIP / VVIP",
+                                "emoji": {"name": "👑"}
+                            },
+                            {
+                                "type": 2,
+                                "style": 2,
+                                "custom_id": "payom_verify:rules",
+                                "label": "กฎระเบียบเซิร์ฟเวอร์",
+                                "emoji": {"name": "📜"}
+                            }
+                        ]
+                    },
+                    {"type": 14, "divider": True, "spacing": 1},
+                    {
+                        "type": 10,
+                        "content": "**POWERED BY PAYOMBOYZ ADVANCED SENTINEL PROTOCOL**"
+                    },
+                    {"type": 14, "divider": True, "spacing": 1},
+                    {
+                        "type": 12,
+                        "items": [
+                            {
+                                "media": {
+                                    "url": banner
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+
+
+async def send_verify_v2_panel(channel_id: int, bot_token: str, guild_id: Optional[int] = None, role_id: Optional[int] = None, banner_url: Optional[str] = None) -> Tuple[bool, Any]:
+    """Dispatches native Discord Components V2 message directly via REST API v10."""
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {bot_token}",
+        "Content-Type": "application/json",
+        "User-Agent": "DiscordBot (https://github.com/Payomboyz0028, 1.0)"
+    }
+    payload = build_verify_v2_payload(guild_id=guild_id, role_id=role_id, banner_url=banner_url)
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, json=payload) as r:
+            try:
+                data = await r.json()
+            except Exception:
+                data = await r.text()
+            return r.status == 200, data
+
+
+async def edit_verify_v2_panel(channel_id: int, message_id: int, bot_token: str, guild_id: Optional[int] = None, role_id: Optional[int] = None, banner_url: Optional[str] = None) -> Tuple[bool, Any]:
+    """Updates existing message to native Discord Components V2 Container via REST API v10."""
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages/{message_id}"
+    headers = {
+        "Authorization": f"Bot {bot_token}",
+        "Content-Type": "application/json",
+        "User-Agent": "DiscordBot (https://github.com/Payomboyz0028, 1.0)"
+    }
+    payload = build_verify_v2_payload(guild_id=guild_id, role_id=role_id, banner_url=banner_url)
+    async with aiohttp.ClientSession() as session:
+        async with session.patch(url, headers=headers, json=payload) as r:
+            try:
+                data = await r.json()
+            except Exception:
+                data = await r.text()
+            return r.status == 200, data
 
 
 # ─────────────────────────────────────────────────────────────
@@ -243,7 +376,7 @@ class CaptchaChallengeView(discord.ui.View):
 
 
 # ─────────────────────────────────────────────────────────────
-# Persistent View — Main Verification Panel Button
+# Persistent View — Main Verification Panel Button (Components V2 Luxury)
 # ─────────────────────────────────────────────────────────────
 class VerifyPanelView(discord.ui.View):
     """Persistent View for Verification Panel — survives bot restarts."""
@@ -254,9 +387,10 @@ class VerifyPanelView(discord.ui.View):
     @discord.ui.button(
         label="ยืนยันตัวตน",
         style=discord.ButtonStyle.success,
+        emoji="🟢",
         custom_id="payom_verify:start"
     )
-    async def btn_verify(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def btn_verify(self, interaction: discord.Interaction, button: discord.ui.Button = None):
         guild = interaction.guild
         if not guild:
             await interaction.response.send_message("❌ สามารถใช้งานได้เฉพาะในเซิร์ฟเวอร์", ephemeral=True)
@@ -282,7 +416,7 @@ class VerifyPanelView(discord.ui.View):
         # Check if already verified
         if role and role in getattr(member, "roles", []):
             await interaction.response.send_message(
-                f"You are already verified with {role.mention}",
+                f"🔒 **คุณได้รับการยืนยันตัวตนแล้ว!** ({role.mention})\nคุณมีสิทธิ์เข้าถึงห้องต่างๆ ในเซิร์ฟเวอร์เรียบร้อยแล้ว ไม่จำเป็นต้องยืนยันซ้ำ",
                 ephemeral=True
             )
             return
@@ -311,6 +445,126 @@ class VerifyPanelView(discord.ui.View):
             ephemeral=True
         )
 
+    @discord.ui.button(
+        label="วิธีผ่าน Captcha",
+        style=discord.ButtonStyle.secondary,
+        emoji="❓",
+        custom_id="payom_verify:help"
+    )
+    async def btn_help(self, interaction: discord.Interaction, button: discord.ui.Button = None):
+        embed = discord.Embed(
+            title="❓ คู่มือการยืนยันตัวตน (Captcha Guide)",
+            description=(
+                "ระบบรักษาความปลอดภัย **PAYOMBØYZ SENTINEL GATE** ใช้ตรวจสอบผู้ใช้งานจริง\n\n"
+                "**📌 ขั้นตอนการยืนยันตัวตนง่ายๆ ใน 3 สเต็ป:**\n"
+                "1️⃣ กดปุ่ม **\"🟢 ยืนยันตัวตน\"** บนหน้าต่างหลัก\n"
+                "2️⃣ บอทจะส่งภาพรหัส Captcha แบบส่วนตัว (เห็นเฉพาะคุณคนเดียว)\n"
+                "3️⃣ กดปุ่ม **\"ยืนยันคำตอบ\"** แล้วพิมพ์ตัวเลข/ตัวอักษรที่เห็นลงในหน้าต่างข้อความ\n\n"
+                "**💡 ข้อควรรู้:**\n"
+                "• ตัวอักษรพิมพ์เล็กหรือพิมพ์ใหญ่ใช้ได้หมด (Case-insensitive)\n"
+                "• ภาพ Captcha มีอายุ 5 นาที หากไม่ทัน สามารถกดเริ่มใหม่ได้\n"
+                "• หากภาพตัวอักษรซ้อนกันจนอ่านไม่ออก ให้กดปุ่ม \"ยืนยันตัวตน\" อีกครั้งเพื่อสุ่มโจทย์ใหม่"
+            ),
+            color=COLOR_VERIFY_RED
+        )
+        embed.set_footer(text="PAYOMBØYZ Sentinel Gate • 100% Anti-Bot Protection")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(
+        label="เช็คสถานะยศ",
+        style=discord.ButtonStyle.secondary,
+        emoji="🔍",
+        custom_id="payom_verify:status"
+    )
+    async def btn_status(self, interaction: discord.Interaction, button: discord.ui.Button = None):
+        member = interaction.user
+        guild = interaction.guild
+        role_id = guild_config.get_verify_role(guild.id) if guild else DEFAULT_VERIFIED_ROLE_ID
+        role_id = role_id or DEFAULT_VERIFIED_ROLE_ID
+        target_role = guild.get_role(role_id) if guild else None
+
+        is_verified = (target_role and target_role in getattr(member, "roles", []))
+        status_text = "✅ **ยืนยันตัวตนแล้ว** (Verified Human)" if is_verified else "❌ **ยังไม่ผ่านการยืนยันตัวตน** (Unverified)"
+        badge_icon = "🛡️" if is_verified else "⏳"
+
+        roles_list = [r.mention for r in getattr(member, "roles", []) if guild and r.id != guild.id]
+        roles_str = " ".join(roles_list[-8:]) if roles_list else "ไม่มี"
+
+        embed = discord.Embed(
+            title=f"{badge_icon} สถานะบัญชีของคุณใน {guild.name if guild else 'Server'}",
+            color=0x00FF7F if is_verified else COLOR_VERIFY_RED
+        )
+        if hasattr(member, "display_avatar"):
+            embed.set_thumbnail(url=member.display_avatar.url)
+
+        created_ts = int(member.created_at.timestamp()) if hasattr(member, "created_at") else int(time.time())
+        joined_ts = int(member.joined_at.timestamp()) if hasattr(member, "joined_at") and member.joined_at else 0
+
+        embed.add_field(name="👤 ผู้ใช้งาน", value=f"{member.mention} (`{member.name}`)", inline=True)
+        embed.add_field(name="🔰 สถานะ Sentinel", value=status_text, inline=True)
+        embed.add_field(name="🏷️ ยศเป้าหมาย", value=f"{target_role.mention if target_role else 'ไม่พบยศ'}", inline=False)
+        embed.add_field(name="📅 สร้างบัญชีเมื่อ", value=f"<t:{created_ts}:D> (<t:{created_ts}:R>)", inline=True)
+        if joined_ts:
+            embed.add_field(name="📥 เข้าร่วมเมื่อ", value=f"<t:{joined_ts}:D> (<t:{joined_ts}:R>)", inline=True)
+        embed.add_field(name="🎖️ บทบาทของคุณ", value=roles_str, inline=False)
+
+        embed.set_footer(text="PAYOMBØYZ Hub Verification Sentinel")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(
+        label="สิทธิ์ยศ VIP / VVIP",
+        style=discord.ButtonStyle.primary,
+        emoji="👑",
+        custom_id="payom_verify:vip_roles"
+    )
+    async def btn_vip(self, interaction: discord.Interaction, button: discord.ui.Button = None):
+        embed = discord.Embed(
+            title="👑 สิทธิประโยชน์ยศ VIP & VVIP — PAYOMBØYZ HUB",
+            description=(
+                "> **ศูนย์รวมเครื่องมืออัตโนมัติ สคริปต์ระดับพระกาฬ และบอททำเควสที่ดีที่สุด**\n\n"
+                "💎 **สิทธิ์ยศ VIP (Tier Premium):**\n"
+                "• 🎮 **Discord Auto Quest:** ป้อน Token ได้พร้อมกันสูงสุด **3 Tokens**\n"
+                "• ⚡ **Bypass Engine:** ปลดล็อกคูลดาวน์ ไม่ติด Rate-Limit Bypass ลิงก์ทุกประเภท\n"
+                "• 📜 **VIP Scripts:** เข้าถึงสคริปต์อัปเดตใหม่ล่าสุดในห้องพิเศษก่อนใคร\n\n"
+                "👑 **สิทธิ์ยศ VVIP / BOOSTER (Tier God):**\n"
+                "• 🎮 **Auto Quest God Mode:** รองรับการใส่ Token พร้อมกันสูงสุด **7 Tokens** รวดเดียวจบทุกเควส\n"
+                "• 🚀 **AI Script Engine Access:** ใช้งานระบบ AI สร้างสคริปต์ Luau ไม่จำกัดรอบ\n"
+                "• 🛡️ **Priority Queue:** เซิร์ฟเวอร์ประมวลผลคำสั่ง Bypass และ Quests เร็วที่สุด\n"
+                "• 🛠️ **Private Support:** ติดต่อทีมงานและผู้พัฒนาโดยตรงผ่าน Ticket พิเศษ\n\n"
+                "✨ *ต้องการอัปเกรดยศหรือสนับสนุนเซิร์ฟเวอร์ ติดต่อผู้ดูแลหรือเปิดห้อง Ticket ได้ตลอด 24 ชม.*"
+            ),
+            color=0xF1C40F
+        )
+        embed.set_footer(text="PAYOMBØYZ VIP Privilege Program")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(
+        label="กฎระเบียบเซิร์ฟเวอร์",
+        style=discord.ButtonStyle.secondary,
+        emoji="📜",
+        custom_id="payom_verify:rules"
+    )
+    async def btn_rules(self, interaction: discord.Interaction, button: discord.ui.Button = None):
+        embed = discord.Embed(
+            title="📜 กฎระเบียบและข้อตกลงประจำเซิร์ฟเวอร์",
+            description=(
+                "ยินดีต้อนรับสู่ **PAYOMBØYZ HUB** โปรดปฏิบัติตามกฎต่อไปนี้เพื่อรักษาสภาพแวดล้อมที่ดีร่วมกัน:\n\n"
+                "1️⃣ **เคารพซึ่งกันและกัน (Respect):**\n"
+                "> ห้ามด่าทอ ใช้ถ้อยคำหยาบคายรุนแรง หรือพฤติกรรม Toxic สมาชิกทุกคนมีสิทธิ์เท่าเทียมกัน\n\n"
+                "2️⃣ **ห้ามสแปม & โฆษณา (No Spam / Ads):**\n"
+                "> ห้ามส่งข้อความซ้ำๆ ห้ามโฆษณาลิงก์ดิสคอร์ดอื่น หรือส่งข้อความรบกวนสมาชิกทางข้อความส่วนตัว (DM Spam)\n\n"
+                "3️⃣ **ห้ามฉ้อโกงหรือหลอกลวง (No Scam / Fraud):**\n"
+                "> ห้ามซื้อขายไอดีที่ผิดกฎหมาย แอบอ้างเป็นแอดมิน หรือแจกไฟล์ที่เป็นอันตราย (Phishing / Malware มีโทษแบนถาวรทันที)\n\n"
+                "4️⃣ **ใช้งานห้องให้ตรงตามประเภท:**\n"
+                "> สั่งทำเควสในห้องเควส แชททั่วไปในห้องแชท และส่งลิงก์ Bypass ในห้องที่กำหนดไว้เท่านั้น\n\n"
+                "5️⃣ **สิทธิ์ของทีมงาน:**\n"
+                "> การตัดสินใจของ Admin / Moderator ถือเป็นที่สิ้นสุด หากต้องการความช่วยเหลือโปรดเปิด Ticket"
+            ),
+            color=0x3498DB
+        )
+        embed.set_footer(text="PAYOMBØYZ HUB Official Server Guidelines")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 # ─────────────────────────────────────────────────────────────
 # Verification Cog & /setpanel Slash Commands
@@ -321,6 +575,35 @@ class VerificationCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        """Global component interceptor for Components V2 and persistent verify buttons."""
+        if interaction.type != discord.InteractionType.component:
+            return
+        cid = interaction.data.get("custom_id", "")
+        if not cid.startswith("payom_verify:") or cid == "payom_verify:submit_btn":
+            return
+
+        if interaction.response.is_done():
+            return
+
+        view = VerifyPanelView()
+        try:
+            if cid == "payom_verify:start":
+                await view.btn_verify(interaction)
+            elif cid == "payom_verify:help":
+                await view.btn_help(interaction)
+            elif cid == "payom_verify:status":
+                await view.btn_status(interaction)
+            elif cid == "payom_verify:vip_roles":
+                await view.btn_vip(interaction)
+            elif cid == "payom_verify:rules":
+                await view.btn_rules(interaction)
+        except discord.InteractionResponded:
+            pass
+        except Exception as e:
+            print(f"[VerificationCog] on_interaction error ({cid}): {e}")
+
     # Slash command group: /setpanel
     setpanel_group = app_commands.Group(
         name="setpanel",
@@ -328,16 +611,18 @@ class VerificationCog(commands.Cog):
         default_permissions=discord.Permissions(administrator=True)
     )
 
-    @setpanel_group.command(name="verify", description="🛡️ ติดตั้งแผงยืนยันตัวตน (Captcha Verification Panel แบบ FlowAuth)")
+    @setpanel_group.command(name="verify", description="🛡️ ติดตั้งแผงยืนยันตัวตน (Components V2 Luxury Container แบบ Auto Quest)")
     @app_commands.describe(
         role="ยศที่จะมอบให้ผู้ใช้เมื่อยืนยันตัวตนผ่าน (ถ้าไม่ระบุ = ตรวจหาอัตโนมัติ)",
-        channel="ช่องที่จะส่งแผงยืนยันตัวตน (ถ้าไม่ระบุ = ช่องปัจจุบัน)"
+        channel="ช่องที่จะส่งแผงยืนยันตัวตน (ถ้าไม่ระบุ = ช่องปัจจุบัน)",
+        banner="ลิงก์รูปภาพหรือ GIF แบนเนอร์ (ถ้าไม่ระบุ = แบนเนอร์ทางการ PAYOMBØYZ)"
     )
     async def cmd_setpanel_verify(
         self,
         interaction: discord.Interaction,
         role: Optional[discord.Role] = None,
-        channel: Optional[discord.TextChannel] = None
+        channel: Optional[discord.TextChannel] = None,
+        banner: Optional[str] = None
     ):
         target_channel = channel or interaction.channel
         guild = interaction.guild
@@ -382,7 +667,32 @@ class VerificationCog(commands.Cog):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        # Build exact clone embed matching FlowAuth
+        bot_token = self.bot.http.token
+        ok, res = await send_verify_v2_panel(
+            channel_id=target_channel.id,
+            bot_token=bot_token,
+            guild_id=guild.id,
+            role_id=target_role.id,
+            banner_url=banner
+        )
+
+        if ok and isinstance(res, dict) and res.get("id"):
+            msg_id = int(res["id"])
+            guild_config.set_verify_role(guild.id, target_role.id)
+            guild_config.set_verify_channel(guild.id, target_channel.id)
+            guild_config.set_verify_panel_message(guild.id, msg_id)
+
+            await interaction.followup.send(
+                f"✅ **ติดตั้ง Verification Panel (Components V2 Luxury Container) เรียบร้อยแล้ว!**\n"
+                f"• **ช่อง:** {target_channel.mention}\n"
+                f"• **ยศที่จะได้รับ:** {target_role.mention} (`{target_role.id}`)\n"
+                f"• **Message ID:** `{msg_id}`\n\n"
+                "ระบบแผงควบคุมขนาดใหญ่ระดับพรีเมียมพร้อมใช้งานทันที!",
+                ephemeral=True
+            )
+            return
+
+        # Fallback to standard embed if V2 container REST failed
         panel_embed = discord.Embed(
             title="PAYOMBØYZ Verification",
             description=(
@@ -391,23 +701,18 @@ class VerificationCog(commands.Cog):
             ),
             color=COLOR_VERIFY_RED
         )
-
         view = VerifyPanelView()
-
         try:
             msg = await target_channel.send(embed=panel_embed, view=view)
-            
-            # Save configuration
             guild_config.set_verify_role(guild.id, target_role.id)
             guild_config.set_verify_channel(guild.id, target_channel.id)
             guild_config.set_verify_panel_message(guild.id, msg.id)
 
             await interaction.followup.send(
-                f"✅ **ติดตั้ง Verification Panel เรียบร้อยแล้ว!**\n"
+                f"✅ **ติดตั้ง Verification Panel (Fallback Mode) เรียบร้อยแล้ว!**\n"
                 f"• **ช่อง:** {target_channel.mention}\n"
                 f"• **ยศที่จะได้รับ:** {target_role.mention} (`{target_role.id}`)\n"
-                f"• **Message ID:** `{msg.id}`\n\n"
-                "ระบบพร้อมทำงาน 100% แทนที่ FlowAuth ได้ทันที!",
+                f"• **Message ID:** `{msg.id}`",
                 ephemeral=True
             )
         except discord.Forbidden:
@@ -418,6 +723,56 @@ class VerificationCog(commands.Cog):
         except Exception as e:
             await interaction.followup.send(
                 f"❌ เกิดข้อผิดพลาดในการติดตั้ง Panel: `{e}`",
+                ephemeral=True
+            )
+
+    @setpanel_group.command(name="verify_refresh", description="🔄 อัปเกรด/รีเฟรชแผงยืนยันตัวตนเดิมให้เป็น Components V2 Luxury ทันที")
+    @app_commands.describe(
+        message_id="Message ID ของแผงเดิม (ถ้าไม่ระบุ = ดึงจากที่บันทึกไว้)",
+        channel="ช่องที่แผงตั้งอยู่ (ถ้าไม่ระบุ = ช่องปัจจุบัน)",
+        banner="ลิงก์รูปภาพหรือ GIF แบนเนอร์ใหม่ (ไม่บังคับ)"
+    )
+    async def cmd_setpanel_verify_refresh(
+        self,
+        interaction: discord.Interaction,
+        message_id: Optional[str] = None,
+        channel: Optional[discord.TextChannel] = None,
+        banner: Optional[str] = None
+    ):
+        guild = interaction.guild
+        if not guild:
+            await interaction.response.send_message("❌ ใช้ได้เฉพาะในเซิร์ฟเวอร์", ephemeral=True)
+            return
+
+        target_channel = channel or interaction.channel
+        target_msg_id = int(message_id) if message_id and message_id.isdigit() else guild_config.get_verify_panel_message(guild.id)
+        if not target_msg_id:
+            await interaction.response.send_message("❌ ไม่พบ Message ID ของแผงเดิม กรุณาระบุพารามิเตอร์ `message_id`", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        role_id = guild_config.get_verify_role(guild.id) or DEFAULT_VERIFIED_ROLE_ID
+        bot_token = self.bot.http.token
+
+        ok, res = await edit_verify_v2_panel(
+            channel_id=target_channel.id,
+            message_id=target_msg_id,
+            bot_token=bot_token,
+            guild_id=guild.id,
+            role_id=role_id,
+            banner_url=banner
+        )
+
+        if ok:
+            guild_config.set_verify_panel_message(guild.id, target_msg_id)
+            guild_config.set_verify_channel(guild.id, target_channel.id)
+            await interaction.followup.send(
+                f"✅ **อัปเกรดแผงยืนยันตัวตน (Message ID: `{target_msg_id}`) ใน {target_channel.mention} เป็น Components V2 Luxury เรียบร้อยแล้ว!**",
+                ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                f"❌ ไม่สามารถรีเฟรชข้อความได้: `{res}`",
                 ephemeral=True
             )
 
