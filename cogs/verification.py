@@ -469,13 +469,17 @@ class VerificationCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
-        """Global component interceptor for Components V2 and persistent verify buttons."""
+        """Global component interceptor for Components V2 buttons NOT handled by a registered persistent View.
+        
+        NOTE: 'payom_verify:start' is handled exclusively by VerifyPanelView (persistent view).
+        We MUST NOT call handle_verify_start() here to avoid double-dispatch on the same interaction.
+        """
         if interaction.type != discord.InteractionType.component:
             return
         cid = interaction.data.get("custom_id", "")
+        # 'payom_verify:start' is handled by VerifyPanelView persistent view — skip here to prevent duplicate response
         if cid == "payom_verify:start":
-            if not interaction.response.is_done():
-                await handle_verify_start(interaction)
+            return
 
     # Slash command group: /setpanel
     setpanel_group = app_commands.Group(
