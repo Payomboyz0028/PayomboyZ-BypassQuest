@@ -343,10 +343,30 @@ class CaptchaChallengeView(discord.ui.View):
 
 
 # ─────────────────────────────────────────────────────────────
-# Core Verification Handler (Standalone & Timeout-Safe)
+# Core Verification Handler (Standalone, Timeout-Safe & Deduplicated)
 # ─────────────────────────────────────────────────────────────
+_processed_interactions: set[int] = set()
+_user_last_verify_click: dict[int, float] = {}
+_verify_lock = asyncio.Lock()
+
+
 async def handle_verify_start(interaction: discord.Interaction):
-    """Core logic to handle 'payom_verify:start' button click with immediate ACK."""
+    """Core logic to handle 'payom_verify:start' with atomic deduplication & cooldown."""
+    async with _verify_lock:
+        # Layer 1: Deduplicate identical interaction ID (kills view + listener dual dispatch)
+        if interaction.id in _processed_interactions:
+            return
+        _processed_interactions.add(interaction.id)
+        if len(_processed_interactions) > 1000:
+            _processed_interactions.clear()
+
+        # Layer 2: Per-user debounce cooldown (2.5 seconds window prevents double/triple clicks)
+        now = time.time()
+        last_click = _user_last_verify_click.get(interaction.user.id, 0.0)
+        if now - last_click < 2.5:
+            return
+        _user_last_verify_click[interaction.user.id] = now
+
     guild = interaction.guild
     if not guild:
         if not interaction.response.is_done():
@@ -454,7 +474,8 @@ class VerificationCog(commands.Cog):
             return
         cid = interaction.data.get("custom_id", "")
         if cid == "payom_verify:start":
-            await handle_verify_start(interaction)
+            if not interaction.response.is_done():
+                await handle_verify_start(interaction)
 
     # Slash command group: /setpanel
     setpanel_group = app_commands.Group(

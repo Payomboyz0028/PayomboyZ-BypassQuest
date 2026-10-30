@@ -157,9 +157,8 @@ class KeyBypassBot(commands.Bot):
         except Exception as e:
             print(f"  [WARN] PanelView register error: {e}")
         try:
-            from cogs.verification import VerifyPanelView
-            self.add_view(VerifyPanelView())
-            print("  [OK] Registered persistent VerifyPanelView")
+            # VerifyPanelView is registered inside cogs.verification setup(bot)
+            pass
         except Exception as e:
             print(f"  [WARN] VerifyPanelView register error: {e}")
         try:
