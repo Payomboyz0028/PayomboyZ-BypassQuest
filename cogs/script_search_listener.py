@@ -1,6 +1,7 @@
 """
 Public Script Search — ตอบในช่องสาธารณะ ไม่ต้องกด /command
-ดึงจาก RScript API สไตล์ 'Script-Search' Channel (เหมือนรูปที่คุณส่ง)
+ดึงจาก RScript API สไตล์ 'Script-Search' Channel
+ดีไซน์หรูหราแบบ Discord Components V2 Container Panel ขนาดใหญ่
 """
 import discord
 from discord import app_commands
@@ -18,17 +19,11 @@ try:
 except ImportError:
     guild_config = None
 
-try:
-    from utils.script_api import script_api
-except ImportError:
-    script_api = None
-
 SCRIPT_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "scripts.json")
 
 TYPE_EMOJI = {"farm":"🌾","admin":"👑","aimbot":"🎯","mod":"🔧","esp":"👁️","tool":"🛠️","raid":"⚔️","hunt":"🏹","stat":"📊","shop":"🛒","quest":"📜","dungeon":"🏚️","script":"📜"}
 
-# เก็บ Message ID ของ Setup เพื่อ Edit กลับมาอยู่ล่างสุดเสมอ
-SETUP_MSG_ID = {}
+DEFAULT_SCRIPT_BANNER_URL = "https://cdn.discordapp.com/attachments/1565150107513520179/1565169276741226659/banner.gif"
 
 def load_db():
     try:
@@ -52,23 +47,124 @@ def format_script_code(item: dict) -> str:
         return f'loadstring(game:HttpGet("{raw}"))()'
     return raw
 
-class ScriptCardView(discord.ui.View):
-    """ปุ่มสำหรับคัดลอกสคริปต์ + เปลี่ยนหน้า"""
-    def __init__(self, items: list, page: int, user_id: int):
+
+class ScriptCardView(discord.ui.LayoutView):
+    """Luxury Discord Components V2 Container Panel for Roblox Script Search."""
+
+    def __init__(self, items: list, page: int = 0, user_id: int = 0):
         super().__init__(timeout=300)
         self.items = items
         self.page = page
         self.user_id = user_id
-        self.per_page = 1
+        self._rebuild()
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return True  # ทุกคนกดได้
 
+    def _rebuild(self):
+        self.clear_items()
+        idx = self.page
+        if idx >= len(self.items):
+            idx = 0
+            self.page = 0
+        s = self.items[idx]
+
+        script_title = s.get("name", "Roblox Script").strip()
+        game = s.get("game", "Unknown Game")
+        verified = "✅ ยืนยันแล้ว (Safe)" if s.get("verified") else "⚠️ ยังไม่ยืนยัน"
+        key = "🔐 มีระบบคีย์" if s.get("has_key") else "🔓 ฟรีไร้คีย์ 100%"
+        views = s.get("views", 0)
+        created = s.get("created", "")[:10] if s.get("created") else "N/A"
+        updated = s.get("updated", "")[:10] if s.get("updated") else "N/A"
+        mobile = "📱 รองรับมือถือ (Universal)" if s.get("is_universal") else "💻 PC / Executor ทั่วไป"
+        src = "ScriptBlox" if "scriptblox" in s.get("source", "").lower() else ("RScripts" if "rscripts" in s.get("source", "").lower() else "PayomboyZ Vault")
+
+        # 1. Header with custom animated wings
+        header_text = (
+            f"## <a:pbg_wing_l:1562553182859563150> **PAYOMBØYZ SCRIPT SEARCH ENGINE** <a:pbg_wing_r:1562553185325940748>\n"
+            f"### 📜 **{script_title}**"
+        )
+
+        # 2. Body Text with Spec Matrix
+        body_text = (
+            f"> <:payomboyz:1551064225974325318> **ระบบค้นหาสคริปต์อัตโนมัติ (Roblox Script Engine)**\n"
+            f"> 🎮 **เกม / แมพเป้าหมาย:** `{game}` 🔥\n"
+            f"> 📦 **แหล่งข้อมูล:** `{src}` • **หน้าที่:** `{self.page+1}/{len(self.items)}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 **ข้อมูลสเปกสคริปต์ (Script Specifications):**\n"
+            f"• 🛡️ **สถานะความปลอดภัย:** `{verified}`\n"
+            f"• 🔑 **ระบบคีย์:** `{key}`\n"
+            f"• 👁️ **ยอดเข้าชม:** `{views:,} ครั้ง`\n"
+            f"• 📅 **วันที่สร้าง:** `{created}`\n"
+            f"• 🔄 **อัปเดตล่าสุด:** `{updated}`\n"
+            f"• 📱 **อุปกรณ์ที่รองรับ:** `{mobile}`"
+        )
+
+        # 3. Execution Code Box
+        code = format_script_code(s)
+        if code:
+            display_code = code if len(code) <= 850 else f"{code[:840]}..."
+            body_text += (
+                f"\n\n📋 **Script Execution (คัดลอกไปวางใน Executor ได้ทันที):**\n"
+                f"```lua\n{display_code}\n```"
+            )
+
+        # 4. Action Buttons
+        prev_btn = discord.ui.Button(label="◀️ ก่อนหน้า", style=discord.ButtonStyle.secondary, custom_id=f"rscript:prev:{idx}")
+        copy_btn = discord.ui.Button(label="📋 Copy Script", style=discord.ButtonStyle.success, custom_id=f"rscript:copy:{idx}")
+        next_btn = discord.ui.Button(label="ถัดไป ▶️", style=discord.ButtonStyle.secondary, custom_id=f"rscript:next:{idx}")
+        deobf_btn = discord.ui.Button(label="🔐 ส่งไป Deobfuscate (กู้ SRC 100%)", style=discord.ButtonStyle.danger, custom_id=f"rscript:deobf:{idx}")
+
+        prev_btn.callback = self.on_prev
+        copy_btn.callback = self.on_copy
+        next_btn.callback = self.on_next
+        deobf_btn.callback = self.on_deobf
+
+        if len(self.items) <= 1:
+            prev_btn.disabled = True
+            next_btn.disabled = True
+        else:
+            prev_btn.disabled = (self.page == 0)
+            next_btn.disabled = (self.page >= len(self.items) - 1)
+
+        row1 = discord.ui.ActionRow(prev_btn, copy_btn, next_btn)
+        row2 = discord.ui.ActionRow(deobf_btn)
+
+        # 5. Image Banner (Script/Game Image or Default Luxury Banner)
+        image_url = s.get("image") or s.get("imageUrl") or ""
+        if not image_url:
+            game_data = s.get("game_data") or s.get("game")
+            if isinstance(game_data, dict):
+                image_url = game_data.get("thumbnailUrl") or game_data.get("logoUrl") or game_data.get("imageUrl") or ""
+        if image_url and image_url.startswith("/"):
+            image_url = f"https://scriptblox.com{image_url}"
+        
+        if not (image_url and (image_url.startswith("http://") or image_url.startswith("https://"))):
+            image_url = DEFAULT_SCRIPT_BANNER_URL
+
+        mg = discord.ui.MediaGallery(discord.MediaGalleryItem(image_url))
+
+        # 6. Container Assembly
+        container = discord.ui.Container(
+            discord.ui.TextDisplay(header_text),
+            discord.ui.Separator(),
+            discord.ui.TextDisplay(body_text),
+            discord.ui.Separator(),
+            row1,
+            row2,
+            discord.ui.Separator(),
+            discord.ui.TextDisplay("**POWERED BY PAYOMBØYZ SCRIPT SEARCH ENGINE • ZERO-RETENTION ARCHITECTURE**"),
+            discord.ui.Separator(),
+            mg,
+            accent_color=discord.Color.from_rgb(0, 255, 204)  # Cyan #00FFCC matching Bomber Panel
+        )
+        self.add_item(container)
+
     def _build_embed(self) -> discord.Embed:
+        """Legacy embed fallback for backward compatibility."""
         idx = self.page
         if idx >= len(self.items): idx = 0
         s = self.items[idx]
-        
         script_title = s.get("name", "Roblox Script").strip()
         game = s.get("game", "Unknown Game")
         verified = "✅ ยืนยันแล้ว (Safe)" if s.get("verified") else "⚠️ ยังไม่ยืนยัน"
@@ -89,16 +185,12 @@ class ScriptCardView(discord.ui.View):
             ),
             color=COLOR_PRIMARY
         )
-
         embed.add_field(name="🛡️ สถานะความปลอดภัย", value=f"`{verified}`", inline=True)
         embed.add_field(name="🔑 ระบบคีย์", value=f"`{key}`", inline=True)
         embed.add_field(name="👁️ ยอดเข้าชม", value=f"`{views:,} ครั้ง`", inline=True)
-
         embed.add_field(name="📅 วันที่สร้าง", value=f"`{created}`", inline=True)
         embed.add_field(name="🔄 อัปเดตล่าสุด", value=f"`{updated}`", inline=True)
         embed.add_field(name="📱 อุปกรณ์ที่รองรับ", value=f"`{mobile}`", inline=True)
-
-        # Raw script copy block
         code = format_script_code(s)
         if code:
             display_code = code if len(code) <= 950 else f"{code[:940]}..."
@@ -107,30 +199,22 @@ class ScriptCardView(discord.ui.View):
                 value=f"```lua\n{display_code}\n```",
                 inline=False
             )
-
-        # รูปภาพใหญ่ด้านล่างของ Panel (เปลี่ยนจาก Thumbnail ขวาบน เป็นภาพใหญ่เต็มสเกลด้านล่าง)
-        image_url = s.get("image") or s.get("imageUrl") or ""
-        if not image_url:
-            game_data = s.get("game_data") or s.get("game")
-            if isinstance(game_data, dict):
-                image_url = game_data.get("thumbnailUrl") or game_data.get("logoUrl") or game_data.get("imageUrl") or ""
-        if image_url and image_url.startswith("/"):
-            image_url = f"https://scriptblox.com{image_url}"
-        if image_url and (image_url.startswith("http://") or image_url.startswith("https://")):
-            embed.set_image(url=image_url)
-
         embed.set_footer(
             text=f"PAYOMBØYZ SCRIPT VAULT • หน้าที่ {self.page+1} จากทั้งหมด {len(self.items)} รายการ • แหล่งที่มา: {src}"
         )
         return embed
 
-    @discord.ui.button(label="◀️ ก่อนหน้า", style=discord.ButtonStyle.blurple, custom_id="prev_card", row=0)
-    async def prev_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def on_prev(self, interaction: discord.Interaction):
         self.page = max(0, self.page - 1)
-        await interaction.response.edit_message(embed=self._build_embed(), view=self)
+        self._rebuild()
+        await interaction.response.edit_message(content=None, embed=None, view=self)
 
-    @discord.ui.button(label="📋 Copy Script", style=discord.ButtonStyle.green, custom_id="copy_script", row=0)
-    async def copy_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def on_next(self, interaction: discord.Interaction):
+        self.page = min(len(self.items) - 1, self.page + 1)
+        self._rebuild()
+        await interaction.response.edit_message(content=None, embed=None, view=self)
+
+    async def on_copy(self, interaction: discord.Interaction):
         item = self.items[self.page]
         code = format_script_code(item)
         if code:
@@ -151,13 +235,7 @@ class ScriptCardView(discord.ui.View):
                 ephemeral=True
             )
 
-    @discord.ui.button(label="ถัดไป ▶️", style=discord.ButtonStyle.blurple, custom_id="next_card", row=0)
-    async def next_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = min(len(self.items) - 1, self.page + 1)
-        await interaction.response.edit_message(embed=self._build_embed(), view=self)
-
-    @discord.ui.button(label="🔐 ส่งไป Deobfuscate (กู้ SRC 100%)", style=discord.ButtonStyle.danger, custom_id="deobf_script_btn", row=1)
-    async def deobf_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def on_deobf(self, interaction: discord.Interaction):
         item = self.items[self.page]
         await interaction.response.defer(ephemeral=False)
 
@@ -200,19 +278,20 @@ class ScriptCardView(discord.ui.View):
 
 
 class ScriptSearchCog(commands.Cog):
-    def __init__(self, bot:commands.Bot):
-        self.bot=bot
-        self.script_channel_id=None
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.script_channel_id = None
 
     @commands.Cog.listener()
-    async def on_message(self, message:discord.Message):
+    async def on_message(self, message: discord.Message):
         # ไม่ตอบบอทเอง / ไม่ตอบใน DM
         if message.author.bot: return
         if message.guild is None: return
-        # ตอบเฉพาะในช่องที่ตั้งไว้ (หรือทุกช่องถ้ายังไม่ตั้ง)
-        text=message.content.strip()
+
+        text = message.content.strip()
         if not text: return
-        # ตรวจสอบว่าเซิร์ฟเวอร์เปิดโหมดค้นหาสคริปต์หรือไม่ (ถ้าเลือกโหมด bypass จะไม่ทำงานเด็ดขาด)
+
+        # ตรวจสอบว่าเซิร์ฟเวอร์เปิดโหมดค้นหาสคริปต์หรือไม่
         if guild_config is not None and message.guild:
             if not guild_config.is_script_enabled(message.guild.id):
                 return
@@ -228,9 +307,6 @@ class ScriptSearchCog(commands.Cog):
 
         # ถ้าเป็นคำสั่งที่มี / ไม่ต้องตอบ (ให้ slash command จัดการ)
         if text.startswith("/"): return
-
-        # ตรวจสอบว่าชองนี้เป็นช่องสคริปต์หรือไม่ (หรือทุกช่องถ้ายังไม่ตั้ง)
-        # ในที่นี้ตอบทุกช่องหรือเฉพาะเมื่อมีคำค้นหา > 2 ตัว
         if len(text) < 2: return
 
         # ดึงจาก Multi-Source (ScriptBlox + RScripts + Local) ด้วย search_with_fallback
@@ -256,18 +332,16 @@ class ScriptSearchCog(commands.Cog):
                 color=COLOR_ERROR
             )
             await message.reply(embed=embed)
-            bump_embed = discord.Embed(title="🎮 Script Search — Auto Q&A", description="พิมพ์ชื่อเกม/แมพ → บอตตอบจาก RScript ทันที (Public)", color=COLOR_INFO)
-            await message.channel.send(embed=bump_embed)
             return
 
-        # มีผลลัพธ์ → แสดงการ์ดสาธารณะ + บัมข้อความตั้งค่าให้อยู่ล่างสุด
+        # มีผลลัพธ์ → แสดงการ์ด Discord Components V2 Panel หรูหราขนาดใหญ่
         view = ScriptCardView(rscript_items, 0, message.author.id)
-        embed = view._build_embed()
-        await message.reply(embed=embed, view=view)
-        # ส่งข้อความตั้งค่าต่อท้ายเสมอ (ให้เห็นทุกคน)
-        bump_embed = discord.Embed(title="🎮 Script Search — Auto Q&A", description="พิมพ์ชื่อเกม/แมพ → บอตตอบจาก RScript ทันที (Public)", color=COLOR_INFO)
-        await message.channel.send(embed=bump_embed)
+        try:
+            await message.reply(view=view)
+        except Exception as e:
+            print(f"[ScriptSearchListener] Failed to reply with Components V2 LayoutView: {e}")
+            await message.reply(embed=view._build_embed(), view=view)
 
 
-async def setup(bot:commands.Bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(ScriptSearchCog(bot))

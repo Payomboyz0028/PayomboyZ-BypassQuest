@@ -210,7 +210,10 @@ class ScriptsCog(commands.Cog):
             await interaction.followup.send(embed=embed)
         if ScriptCardView and rscript_items:
             view = ScriptCardView(rscript_items, 0, interaction.user.id)
-            await interaction.followup.send(embed=view._build_embed(), view=view)
+            try:
+                await interaction.followup.send(view=view)
+            except Exception:
+                await interaction.followup.send(embed=view._build_embed(), view=view)
             return
 
         # สร้าง embed จากผล API
@@ -263,7 +266,10 @@ class ScriptsCog(commands.Cog):
             await interaction.followup.send(embed=embed)
         if ScriptCardView and bscripts:
             view = ScriptCardView(bscripts, 0, interaction.user.id)
-            await interaction.followup.send(embed=view._build_embed(), view=view)
+            try:
+                await interaction.followup.send(view=view)
+            except Exception:
+                await interaction.followup.send(embed=view._build_embed(), view=view)
             return
 
         embed = self._build_search_embed(bscripts[:10], query, "Blox Script", "🟦")
@@ -436,7 +442,10 @@ class ScriptsCog(commands.Cog):
             await interaction.followup.send(embed=embed)
         if ScriptCardView and all_results:
             view = ScriptCardView(all_results, 0, interaction.user.id)
-            await interaction.followup.send(embed=view._build_embed(), view=view)
+            try:
+                await interaction.followup.send(view=view)
+            except Exception:
+                await interaction.followup.send(embed=view._build_embed(), view=view)
             return
 
         # แสดงผล
