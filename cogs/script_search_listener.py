@@ -68,27 +68,47 @@ class ScriptCardView(discord.ui.View):
         idx = self.page
         if idx >= len(self.items): idx = 0
         s = self.items[idx]
-        embed = discord.Embed(
-            title=f"{s.get('name', 'Script')}",
-            color=COLOR_PRIMARY
-        )
-        game = s.get("game", "Unknown")
-        verified = "Yes" if s.get("verified") else "No"
-        key = "Yes" if s.get("has_key") else "No"
+        
+        script_title = s.get("name", "Roblox Script").strip()
+        game = s.get("game", "Unknown Game")
+        verified = "✅ ยืนยันแล้ว (Safe)" if s.get("verified") else "⚠️ ยังไม่ยืนยัน"
+        key = "🔐 มีระบบคีย์" if s.get("has_key") else "🔓 ฟรีไร้คีย์ 100%"
         views = s.get("views", 0)
         created = s.get("created", "")[:10] if s.get("created") else "N/A"
         updated = s.get("updated", "")[:10] if s.get("updated") else "N/A"
-        mobile = "Yes" if s.get("is_universal") else "No"
+        mobile = "📱 รองรับมือถือ (Universal)" if s.get("is_universal") else "💻 PC / Executor ทั่วไป"
+        src = "ScriptBlox" if "scriptblox" in s.get("source", "").lower() else ("RScripts" if "rscripts" in s.get("source", "").lower() else "PayomboyZ Vault")
 
-        embed.add_field(name="Game", value=f"{game} 🔥", inline=False)
-        embed.add_field(name="✅ Verified", value=verified, inline=True)
-        embed.add_field(name="🔑 Key", value=key, inline=True)
-        embed.add_field(name="👁 Views", value=f"{views:,}", inline=True)
-        embed.add_field(name="📅 Created", value=created, inline=True)
-        embed.add_field(name="🔄 Updated", value=updated, inline=True)
-        embed.add_field(name="📱 Mobile", value=mobile, inline=True)
+        embed = discord.Embed(
+            title=f"📜 {script_title}",
+            description=(
+                f"> <:payomboyz:1551064225974325318> **ระบบค้นหาสคริปต์อัตโนมัติ (PAYOMBØYZ SCRIPT SEARCH ENGINE)**\n"
+                f"> 🎮 **เกม / แมพเป้าหมาย:** `{game}` 🔥\n"
+                f"> 📦 **แหล่งข้อมูล:** `{src}` • **หน้าที่:** `{self.page+1}/{len(self.items)}`\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            ),
+            color=COLOR_PRIMARY
+        )
 
-        # รูปภาพ Thumbnail
+        embed.add_field(name="🛡️ สถานะความปลอดภัย", value=f"`{verified}`", inline=True)
+        embed.add_field(name="🔑 ระบบคีย์", value=f"`{key}`", inline=True)
+        embed.add_field(name="👁️ ยอดเข้าชม", value=f"`{views:,} ครั้ง`", inline=True)
+
+        embed.add_field(name="📅 วันที่สร้าง", value=f"`{created}`", inline=True)
+        embed.add_field(name="🔄 อัปเดตล่าสุด", value=f"`{updated}`", inline=True)
+        embed.add_field(name="📱 อุปกรณ์ที่รองรับ", value=f"`{mobile}`", inline=True)
+
+        # Raw script copy block
+        code = format_script_code(s)
+        if code:
+            display_code = code if len(code) <= 950 else f"{code[:940]}..."
+            embed.add_field(
+                name="📋 Script Execution (คัดลอกไปวางใน Executor ได้ทันที):",
+                value=f"```lua\n{display_code}\n```",
+                inline=False
+            )
+
+        # รูปภาพใหญ่ด้านล่างของ Panel (เปลี่ยนจาก Thumbnail ขวาบน เป็นภาพใหญ่เต็มสเกลด้านล่าง)
         image_url = s.get("image") or s.get("imageUrl") or ""
         if not image_url:
             game_data = s.get("game_data") or s.get("game")
@@ -97,23 +117,14 @@ class ScriptCardView(discord.ui.View):
         if image_url and image_url.startswith("/"):
             image_url = f"https://scriptblox.com{image_url}"
         if image_url and (image_url.startswith("http://") or image_url.startswith("https://")):
-            embed.set_thumbnail(url=image_url)
+            embed.set_image(url=image_url)
 
-        # Raw script copy block
-        code = format_script_code(s)
-        if code:
-            display_code = code if len(code) <= 900 else f"{code[:890]}..."
-            embed.add_field(
-                name="📋 Script Copy",
-                value=f"```lua\n{display_code}\n```",
-                inline=False
-            )
-
-        src = "ScriptBlox" if "scriptblox" in s.get("source", "") else ("RScripts" if "rscripts" in s.get("source", "") else "Local")
-        embed.set_footer(text=f"Page {self.page+1}/{len(self.items)} • แหล่งที่มา: {src}")
+        embed.set_footer(
+            text=f"PAYOMBØYZ SCRIPT VAULT • หน้าที่ {self.page+1} จากทั้งหมด {len(self.items)} รายการ • แหล่งที่มา: {src}"
+        )
         return embed
 
-    @discord.ui.button(label="◀ ก่อนหน้า", style=discord.ButtonStyle.blurple, custom_id="prev_card", row=0)
+    @discord.ui.button(label="◀️ ก่อนหน้า", style=discord.ButtonStyle.blurple, custom_id="prev_card", row=0)
     async def prev_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.page = max(0, self.page - 1)
         await interaction.response.edit_message(embed=self._build_embed(), view=self)
@@ -140,12 +151,12 @@ class ScriptCardView(discord.ui.View):
                 ephemeral=True
             )
 
-    @discord.ui.button(label="ถัดไป ▶", style=discord.ButtonStyle.blurple, custom_id="next_card", row=0)
+    @discord.ui.button(label="ถัดไป ▶️", style=discord.ButtonStyle.blurple, custom_id="next_card", row=0)
     async def next_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.page = min(len(self.items) - 1, self.page + 1)
         await interaction.response.edit_message(embed=self._build_embed(), view=self)
 
-    @discord.ui.button(label="🔓 ส่งไป Deobfuscate (กู้ SRC 100%)", style=discord.ButtonStyle.danger, custom_id="deobf_script_btn", row=1)
+    @discord.ui.button(label="🔐 ส่งไป Deobfuscate (กู้ SRC 100%)", style=discord.ButtonStyle.danger, custom_id="deobf_script_btn", row=1)
     async def deobf_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         item = self.items[self.page]
         await interaction.response.defer(ephemeral=False)
