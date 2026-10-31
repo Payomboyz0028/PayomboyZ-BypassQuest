@@ -33,8 +33,8 @@ FREE_ROLES = [
 
 SOLVER_LOCAL_API = os.getenv("SOLVER_LOCAL_API", "http://127.0.0.1:8000")
 DEFAULT_SOLVER_BANNER_GIF = (
-    "https://cdn.discordapp.com/attachments/1549827759457570906/1565343190066921642/payomboyz_key_management.gif"
-    "?ex=6ae5e073&is=6ae48ef3&hm=ad544bf7a8749c00ad97123d81e32897107691f170a9d4f371d7f80e600757f7&"
+    "https://cdn.discordapp.com/attachments/1563723925119176774/1566034512813498499/payomboyz_captcha_v2_solver.gif"
+    "?ex=6ae712cb&is=6ae5c14b&hm=59a3e52d1a37fa01a655a8e5a115484363e71c6f31e81db6eef121f97e57303e&"
 )
 
 COOKIE_PATTERN = re.compile(r'_\|WARNING:-DO-NOT-SHARE-THIS\.--Sharing-this-will-allow-someone-to-log-in-to-your-account-and-to-steal-your-ROBUX-and-items\._[A-Za-z0-9_\-]+')
@@ -553,3 +553,4 @@ async def setup(bot: commands.Bot):
     bot.add_view(CaptchaSolverPersistentView())
     await bot.add_cog(CaptchaSolverCog(bot))
     print("  [OK] Loaded: cogs.captcha_solver & Registered CaptchaSolverPersistentView")
+
