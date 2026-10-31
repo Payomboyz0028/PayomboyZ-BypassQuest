@@ -182,6 +182,12 @@ class KeyBypassBot(commands.Bot):
             print("  [OK] Registered persistent StatusMapPersistentView")
         except Exception as e:
             print(f"  [WARN] StatusMapPersistentView register error: {e}")
+        try:
+            from cogs.captcha_solver import CaptchaSolverPersistentView
+            self.add_view(CaptchaSolverPersistentView())
+            print("  [OK] Registered persistent CaptchaSolverPersistentView")
+        except Exception as e:
+            print(f"  [WARN] CaptchaSolverPersistentView register error: {e}")
 
         print("[*] Syncing Slash Commands...")
         try:
